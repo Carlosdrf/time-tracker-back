@@ -1,6 +1,6 @@
 import express from 'express'
 import morgan from 'morgan'
-import entriesR from './routes/products.routes'
+import entriesR from './routes/entries.routes'
 import authRoute from './routes/auth.routes'
 import {createRoles} from './libs/initialSetup'
 import cors from "cors";

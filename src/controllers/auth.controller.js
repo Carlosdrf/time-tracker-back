@@ -16,7 +16,7 @@ export const signUp = async(req,res) =>{
         const token = jwt.sign({id: savedUser.insertId}, config.SECRET,{
             expiresIn: 86400
         })
-        res.json(token)
+        res.json({token})
         
     }else{
         res.status(404).json('there was a problem')
@@ -31,9 +31,11 @@ export const signin = async(req, res) => {
     const matchPass = await userModel.comparePass(req.body.password, user[0].password)
 
     if(!matchPass) return res.status(401).json({token: null, message: 'invalid password'})
-    const token = jwt.sign({id: user[0].id}, config.SECRET, {
+    const token = jwt.sign({id: user[0].id, name: user[0].fullname }, config.SECRET, {
         expiresIn: 86400
     })
+    const username = user[0].name
+    console.log(username)
 
-    res.json(token)
+    res.json({token, username})
 }

@@ -5,12 +5,13 @@ import roleModel from "../models/Role";
 
 export const verifyToken = async(req, res, next) =>{
     try {
-        const token = req.headers['x-access-token']
+        const token = req.headers.authorization
 
         if(!token) return res.status(403).json({message: 'no token providen'})
-
-        const decoded = jwt.verify(token, config.SECRET)
+        const tokenKey = token.split(' ')[1];
+        const decoded = jwt.verify(tokenKey, config.SECRET)
         req.userId = decoded.id
+        req.name = decoded.name
         console.log(decoded)
         const user = await userModel.findById(req.userId)
         if(!user) res.status(404).json({message: 'no user found'})
