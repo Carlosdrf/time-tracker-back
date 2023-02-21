@@ -12,7 +12,6 @@ export const verifyToken = async(req, res, next) =>{
         const decoded = jwt.verify(tokenKey, config.SECRET)
         req.userId = decoded.id
         req.name = decoded.name
-        console.log(decoded)
         const user = await userModel.findById(req.userId)
         if(!user) res.status(404).json({message: 'no user found'})
 
@@ -24,7 +23,6 @@ export const verifyToken = async(req, res, next) =>{
 }
 export const isEmployee = async(req, res, next) =>{
     const role = await roleModel.verifyUserRole(req.userId);
-    console.log(role[0]);
     if(role[0].name === "Employee"){
         next()
         return;

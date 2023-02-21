@@ -8,9 +8,6 @@ const pool = mysql.createPool({
     password: '',
     database: 'i-nimble_db'
 })
-if(pool){
-    console.log('db connected')
-}
 
 
 pool.getConnection((err, connection) => {
@@ -23,6 +20,7 @@ pool.getConnection((err, connection) => {
     }
     if (err.code === 'ECONNREFUSED') {
       console.error('Database connection was refused');
+      return;
     }
   }
 

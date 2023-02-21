@@ -4,24 +4,25 @@ import jwt from "jsonwebtoken";
 import config from '../config'
 
 export const signUp = async(req,res) =>{
-    const {fullname, email, password} = req.body;
+    const {email, password, name, last_name} = req.body;
     const newUser = ({
-        fullname,
+        name,
+        last_name,
         email,
         password: await userModel.encryptPass(password)
     })
     const savedUser = await userModel.createUser(newUser)
     const roleUser = await roleModel.assignRole(savedUser.insertId);
     if(savedUser){
+        const user = await userModel.findUserByEmail(req.body.email)
         const token = jwt.sign({id: savedUser.insertId}, config.SECRET,{
             expiresIn: 86400
         })
-        res.json({token})
-        
+        const username = user[0].name
+        res.json({token, username})
     }else{
         res.status(404).json('there was a problem')
     }
-    
 }
 
 export const signin = async(req, res) => {
@@ -31,7 +32,7 @@ export const signin = async(req, res) => {
     const matchPass = await userModel.comparePass(req.body.password, user[0].password)
 
     if(!matchPass) return res.status(401).json({token: null, message: 'invalid password'})
-    const token = jwt.sign({id: user[0].id, name: user[0].fullname }, config.SECRET, {
+    const token = jwt.sign({id: user[0].id}, config.SECRET, {
         expiresIn: 86400
     })
     const username = user[0].name
