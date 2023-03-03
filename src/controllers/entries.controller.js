@@ -34,6 +34,7 @@ export const getStartedEntry = async(req, res) =>{
 }
 export const updateEntryById = async(req, res) =>{
     const {start_time, end_time, date, description, task_id} = req.body
+    console.log(description, task_id)
     const taskData = ({
         id: task_id,
         description
