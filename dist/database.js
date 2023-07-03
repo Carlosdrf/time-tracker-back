@@ -1,16 +1,15 @@
-import mysql from "mysql";
-import { promisify } from 'util';
+"use strict";
 
-
-const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'i-nimble_db'
-})
-
-
-pool.getConnection((err, connection) => {
+var _mysql = _interopRequireDefault(require("mysql"));
+var _util = require("util");
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+var pool = _mysql["default"].createPool({
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'i-nimble_db'
+});
+pool.getConnection(function (err, connection) {
   if (err) {
     if (err.code === 'PROTOCOL_CONNECTION_LOST') {
       console.error('Database connection was closed.');
@@ -22,15 +21,13 @@ pool.getConnection((err, connection) => {
       console.error('Database connection was refused');
     }
     return err;
-  }else{
+  } else {
     if (connection) connection.release();
     console.log('DB is Connected');
-
     return;
-  }  
+  }
 });
 
 // Promisify Pool Querys
-pool.query = promisify(pool.query);
-
+pool.query = (0, _util.promisify)(pool.query);
 module.exports = pool;

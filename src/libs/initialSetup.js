@@ -5,12 +5,19 @@ export const createRoles = async() =>{
         const verify = await roleModule.verifyRoleExists();
         // console.log(verify)
         if(verify.length > 0) return;
-        const Roles = [{
-            id: 1,
-            name: 'Employee'},
-            {id: 2,
-            name: 'Employer'
-        }]
+        const Roles = [
+            {
+                id: 1,
+                name: 'Admin'},
+            {
+                id: 2,
+                name: 'Employee'
+            },
+            {
+                id: 3,
+                name: 'Employer'
+            }
+        ]
         Roles.forEach(async element => {
             // console.log(element)
             await roleModule.createRole(element)
@@ -20,3 +27,12 @@ export const createRoles = async() =>{
     }
     
 }
+
+// export const insertRoles = async() =>{
+//     const users = await roleModule.getUserProv()
+//     users.forEach(element => {
+//         console.log(element.name)
+//         roleModule.assignRole(element.id)        
+//     });
+//     return 0;
+// }

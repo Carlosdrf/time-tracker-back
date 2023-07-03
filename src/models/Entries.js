@@ -1,22 +1,27 @@
 import pool from '../database'
-// import '../database'
 
 const models = {}
 
-models.getEntries = async(user_id) =>{
-    const row = await pool.query('SELECT tt.*, t.description FROM time_tracker tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? and tt.status = 1 ORDER BY tt.start_time DESC', [user_id]);
-    // console.log(row.length)
-    // if(row.length > 0){
-        return row;
-    // }else{
-        // return false
-    // }
+models.getEntries = async(user_id, dateRange = 0) =>{
+    if(dateRange == 0){
+        return await pool.query('SELECT tt.*, t.description FROM time_tracker tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? ORDER BY tt.start_time DESC', [user_id]);
+    }else{
+        return await pool.query('SELECT tt.*, t.description FROM time_tracker tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? AND tt.status = 1 AND tt.date BETWEEN ? AND ? ORDER BY tt.start_time DESC', [user_id, dateRange]);
+    }
+}
+models.getAllEntries = async(dateRange)=>{
+    return await pool.query('SELECT * FROM time_tracker WHERE start_time BETWEEN ? AND ?;', [dateRange.start_time, dateRange.end_time])
 }
 
+// models.getUsersEntries = async(user_id) => {
+//     return await pool.query('SELECT tt.*, t.description FROM time_tracker tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? and tt.status = 1 ORDER BY tt.start_time DESC', [user_id]);
+// }
+
 models.getStartedEntry = async(user_id) => {
-    const row = await pool.query('SELECT id, status FROM time_tracker WHERE user_id = ? AND status = 0', [user_id])
+    const row = await pool.query('SELECT id, status, start_time FROM time_tracker WHERE user_id = ? AND status = 0', [user_id])
     return row;
 }
+
 models.closeCurrentEntry = async(entry_id, date, user_id) => {
     const row = await pool.query('UPDATE time_tracker SET ? WHERE user_id = ? AND id = ? AND status = 0', [date, user_id, entry_id])
     return row;
