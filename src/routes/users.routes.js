@@ -5,4 +5,6 @@ const router = Router()
 
 router.post('/', authJwt.verifyToken, userController.getUsers)
 
+router.post('/create', authJwt.verifyToken, userController.createUser)
+
 export default router;

@@ -13,7 +13,7 @@ let sequelize;
 if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
-  sequelize = new Sequelize(config.database, config.username, config.password, {host: config.host, dialect: config.dialect});
+  sequelize = new Sequelize(config.database, config.username, config.password, { host: config.host, dialect: config.dialect });
 }
 
 fs
@@ -36,6 +36,16 @@ Object.keys(db).forEach(modelName => {
     db[modelName].associate(db);
   }
 });
+const testconn = async () => {
+  try {
+    await sequelize.authenticate()
+    console.log('connection established')
+  } catch (error) {
+    console.error('error')
+  }
+
+}
+testconn();
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;

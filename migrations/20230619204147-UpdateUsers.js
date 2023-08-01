@@ -1,16 +1,31 @@
-'use strict';
+"use strict";
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
-    return await queryInterface.sequelize.transaction(t=>{
+  async up(queryInterface, Sequelize) {
+    return await queryInterface.sequelize.transaction((t) => {
       return Promise.all([
-        queryInterface.addColumn('users', 'name', {
-          type: Sequelize.DataTypes.STRING, after: 'id'}, {transaction: t}),
+        queryInterface.addColumn(
+          "users",
+          "name",
+          {
+            type: Sequelize.DataTypes.STRING,
+            after: "id",
+          },
+          { transaction: t }
+        ),
         // queryInterface.sequelize.query("ATLER TABLE `users` ADD `name` varchar(100) AFTER `id`;", {raw: true}),
-        queryInterface.removeColumn('users', 'first_name', {transaction: t})
-      ])
-    })
+        queryInterface.addColumn(
+          "users",
+          "action_code",
+          { type: Sequelize.DataTypes.STRING },
+          {
+            transaction: t,
+          }
+        ),
+        queryInterface.removeColumn("users", "first_name", { transaction: t }),
+      ]);
+    });
     /**
      * Add altering commands here.
      *
@@ -19,18 +34,23 @@ module.exports = {
      */
   },
 
-  async down (queryInterface, Sequelize) {
+  async down(queryInterface, Sequelize) {
     /**
      * Add reverting commands here.
      *
      * Example:
      * await queryInterface.dropTable('users');
      */
-    return await queryInterface.sequelize.transaction(t=>{
+    return await queryInterface.sequelize.transaction((t) => {
       return Promise.all([
-        queryInterface.removeColumn('users', 'name', {transaction:t}),
-        queryInterface.addColumn('users', 'first_name', {type: Sequelize.DataTypes.STRING, after: 'id'}, {transaction: t})
-      ])
-    })
-  }
+        queryInterface.removeColumn("users", "name", { transaction: t }),
+        queryInterface.addColumn(
+          "users",
+          "first_name",
+          { type: Sequelize.DataTypes.STRING, after: "id" },
+          { transaction: t }
+        ),
+      ]);
+    });
+  },
 };

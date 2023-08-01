@@ -21,6 +21,7 @@ router.post('/users/status', _middlewares.authJwt.verifyToken, entriesController
 router.get('/closeEntry/:entryId', _middlewares.authJwt.verifyToken, entriesController.closeEntry);
 router.post('/', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isEmployee], entriesController.createEntry);
 router.put('/:entryId', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isAdmin], entriesController.updateEntryById);
+router.put('/task/:task_id', [_middlewares.authJwt.verifyToken], entriesController.updateTaskById);
 router["delete"]('/:entryId', [_middlewares.authJwt.verifyToken, _middlewares.authJwt.isEmployee], entriesController.deleteProductById);
 router.get('/started', _middlewares.authJwt.verifyToken, entriesController.getStartedEntry);
 var _default = router;

@@ -8,6 +8,7 @@ import authRoute from './routes/auth.routes'
 import reportRoute from './routes/reports.routes'
 import stripeRoute from './routes/stripe.routes'
 import userRoute from "./routes/users.routes";
+import roleRoute from './routes/roles.routes'
 import {createRoles, insertRoles} from './libs/initialSetup'
 import cors from "cors";
 import * as cronReport from './controllers/report.cron'
@@ -50,6 +51,7 @@ app.use('/api/entries', entriesR)
 app.use('/api/auth', authRoute)
 app.use('/api/reports', reportRoute)
 app.use('/api/users', userRoute)
+app.use('/api/roles', roleRoute)
 // cron.schedule('* * * * *', cronReport.report)
 
 export default server;

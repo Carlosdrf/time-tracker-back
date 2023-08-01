@@ -4,7 +4,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.updateEntryById = exports.getUsersEntries = exports.getUserEntriesStatus = exports.getStartedEntry = exports.getEntries = exports.getAllEntries = exports.genNewToken = exports.deleteProductById = exports.createEntry = exports.closeEntry = void 0;
+exports.updateTaskById = exports.updateEntryById = exports.getUsersEntries = exports.getUserEntriesStatus = exports.getStartedEntry = exports.getEntries = exports.getAllEntries = exports.genNewToken = exports.deleteProductById = exports.createEntry = exports.closeEntry = void 0;
 var _Entries = _interopRequireDefault(require("../models/Entries"));
 var _User = _interopRequireDefault(require("../models/User"));
 var _Report = _interopRequireDefault(require("../models/Report"));
@@ -90,7 +90,7 @@ var getEntries = /*#__PURE__*/function () {
         case 11:
           result = _context2.sent;
         case 12:
-          res.json({
+          res.status(200).json({
             result: result,
             token: token
           });
@@ -211,10 +211,10 @@ var createEntry = /*#__PURE__*/function () {
           return _Entries["default"].createEntry(data);
         case 8:
           result = _context5.sent;
-          // console.log(data)
           if (result) {
             _app.io.emit('server:message', result.insertId);
-            _app.io.emit('server:admin:newEntry', [req.userId, data]);
+            _app.io.emit('server:admin:newEntry');
+            // io.emit('server:admin:newEntry', [req.userId, data])
             res.json(result.insertId);
           } else {
             res.json('There was a Trouble');
@@ -294,7 +294,7 @@ var updateEntryById = /*#__PURE__*/function () {
             start_time: (0, _moment["default"])(date).format('YYYY-MM-DD') + ' ' + (0, _moment["default"])(start_time).format('HH:mm:ss'),
             end_time: (0, _moment["default"])(date).format('YYYY-MM-DD') + ' ' + (0, _moment["default"])(end_time).format('HH:mm:ss'),
             date: (0, _moment["default"])(date).format('YYYY-MM-DD')
-          }; // console.log(entryData)
+          };
           _context8.next = 7;
           return _Entries["default"].updateEntryById(req.params.entryId, entryData);
         case 7:
@@ -319,23 +319,61 @@ var updateEntryById = /*#__PURE__*/function () {
   };
 }();
 exports.updateEntryById = updateEntryById;
-var closeEntry = /*#__PURE__*/function () {
+var updateTaskById = /*#__PURE__*/function () {
   var _ref9 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee9(req, res) {
-    var end_time, entryData, result;
+    var description, taskData, updated;
     return _regeneratorRuntime().wrap(function _callee9$(_context9) {
       while (1) switch (_context9.prev = _context9.next) {
+        case 0:
+          description = req.body.description;
+          console.log(description, req.params.task_id);
+          taskData = {
+            id: req.params.task_id,
+            description: description
+          };
+          _context9.next = 5;
+          return _Entries["default"].updateTask(taskData);
+        case 5:
+          updated = _context9.sent;
+          console.log(updated);
+          if (updated) {
+            res.status(200).json({
+              message: 'Task Updated'
+            });
+          } else {
+            res.status(400).json({
+              message: "there whas an error"
+            });
+          }
+        case 8:
+        case "end":
+          return _context9.stop();
+      }
+    }, _callee9);
+  }));
+  return function updateTaskById(_x16, _x17) {
+    return _ref9.apply(this, arguments);
+  };
+}();
+exports.updateTaskById = updateTaskById;
+var closeEntry = /*#__PURE__*/function () {
+  var _ref10 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee10(req, res) {
+    var end_time, entryData, result;
+    return _regeneratorRuntime().wrap(function _callee10$(_context10) {
+      while (1) switch (_context10.prev = _context10.next) {
         case 0:
           end_time = req.body.end_time; // console.log(req.userId);
           entryData = {
             end_time: (0, _moment["default"])().format('YYYY-MM-DD HH:mm:ss'),
             status: 1
           };
-          _context9.next = 4;
+          _context10.next = 4;
           return _Entries["default"].closeCurrentEntry(req.params.entryId, entryData, req.userId);
         case 4:
-          result = _context9.sent;
+          result = _context10.sent;
           if (result) {
-            _app.io.emit('server:closedEntry', [req.userId, entryData]);
+            // io.emit('server:closedEntry', [req.userId, entryData])
+            _app.io.emit('server:closedEntry');
             res.status(200).json({
               message: 'closed'
             });
@@ -346,25 +384,25 @@ var closeEntry = /*#__PURE__*/function () {
           }
         case 6:
         case "end":
-          return _context9.stop();
+          return _context10.stop();
       }
-    }, _callee9);
+    }, _callee10);
   }));
-  return function closeEntry(_x16, _x17) {
-    return _ref9.apply(this, arguments);
+  return function closeEntry(_x18, _x19) {
+    return _ref10.apply(this, arguments);
   };
 }();
 exports.closeEntry = closeEntry;
 var deleteProductById = /*#__PURE__*/function () {
-  var _ref10 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee10(req, res) {
+  var _ref11 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee11(req, res) {
     var result;
-    return _regeneratorRuntime().wrap(function _callee10$(_context10) {
-      while (1) switch (_context10.prev = _context10.next) {
+    return _regeneratorRuntime().wrap(function _callee11$(_context11) {
+      while (1) switch (_context11.prev = _context11.next) {
         case 0:
-          _context10.next = 2;
+          _context11.next = 2;
           return _Entries["default"].deleteById(req.params.entryId);
         case 2:
-          result = _context10.sent;
+          result = _context11.sent;
           if (result) {
             res.json(result);
           } else {
@@ -372,12 +410,12 @@ var deleteProductById = /*#__PURE__*/function () {
           }
         case 4:
         case "end":
-          return _context10.stop();
+          return _context11.stop();
       }
-    }, _callee10);
+    }, _callee11);
   }));
-  return function deleteProductById(_x18, _x19) {
-    return _ref10.apply(this, arguments);
+  return function deleteProductById(_x20, _x21) {
+    return _ref11.apply(this, arguments);
   };
 }();
 exports.deleteProductById = deleteProductById;
