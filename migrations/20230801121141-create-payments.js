@@ -5,7 +5,7 @@ const { sequelize } = require('../models');
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Payments', {
+    await queryInterface.createTable('payments', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -18,7 +18,7 @@ module.exports = {
       amount: {
         type: Sequelize.FLOAT
       },
-      client_id: {
+      user_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -27,21 +27,34 @@ module.exports = {
         },
         onDelete: 'CASCADE'
       },
-      status: {
+      status_id: {
         allowNull: false,
-        type: Sequelize.BOOLEAN
+        type: Sequelize.INTEGER,
+        references: {
+          key: 'id',
+          model: 'status'
+        },
+        onDelete: 'CASCADE'
       },
-      createdAt: {
+      currency_id: {
+        type: Sequelize.INTEGER,
+        references: {
+          key: 'id',
+          model: 'currencies'
+        },
+        onDelete: 'CASCADE'
+      },
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE
       }
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Payments');
+    await queryInterface.dropTable('payments');
   }
 };

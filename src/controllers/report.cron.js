@@ -20,7 +20,7 @@ export const report = async function cronReport(){
 }
 
 export const UTCformat = async(date) => {
-    const receivedDate = new Date(moment(date).format('YYYY-MM-DD'))
+    const receivedDate = new Date(date)
     const utc = new Date(
         receivedDate.getUTCFullYear(),
         receivedDate.getUTCMonth(),
@@ -31,6 +31,7 @@ export const UTCformat = async(date) => {
 }
 export const UTCend = async(date) => {
     const receivedDate = new Date(date)
+    console.log(receivedDate)
     const utc = new Date(
         receivedDate.getUTCFullYear(),
         receivedDate.getUTCMonth(),

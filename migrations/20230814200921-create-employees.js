@@ -2,44 +2,31 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('time_tracker', {
+    await queryInterface.createTable('employees', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      start_time: {
-        type: Sequelize.DATE
-      },
-      end_time: {
-        type: Sequelize.DATE
-      },
-      date: {
-        type: Sequelize.DATE
-      },
-      status: {
-        type: Sequelize.INTEGER
-      },
       user_id: {
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
         references: {
           model: 'users',
           key: 'id'
-        }
+        },
+        onDelete: 'CASCADE'
       },
-      task_id: {
+      company_id: {
         type: Sequelize.INTEGER,
-        onDelete: 'CASCADE',
         references: {
-          model: 'tasks',
+          model: 'companies',
           key: 'id'
         }
       }
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('time_tracker');
+    await queryInterface.dropTable('employees');
   }
 };

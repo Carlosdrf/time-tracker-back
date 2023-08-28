@@ -1,35 +1,16 @@
 import { Stripe } from "stripe";
 import stripeModel from "../models/Payments";
 const stripe = require('stripe')('sk_test_4eC39HqLyjWDarjtT1zdp7dc')
-
-export const checkout = async (req, res) => {
-    const stripeToken = req.body.stripeToken;
-    const {items} = req.body
-    const cantidad = req.body.cantidad
-    const cantInEur = Math.round(cantidad * 10)
-    const chargeObject = await stripe.charges.create({
-        amount: cantInUsd,
-        currency: 'usd',
-        // source: stripeToken,
-        capture: true,
-        description: 'xdxd',
-        receipt_email: 'crivas@i-nimble.com'
-    })
-    try {
-        await stripe.charges.capture(chargeObject.id)
-        res.json(chargeObject)
-    } catch (error) {
-        await stripe.refunds.create({ charge: chargeObject.id })
-        res.json(chargeObject)
-    }
-}
+const db = require('../../models')
 
 export const paymentIntent = async (req, res) => {
     const items = req.body
-
-    console.log(req.body)
-    console.log(items)
-    const cantInEur = Math.round(items.cantidad * 10)
+    // const user = await db.Users.findAll({
+    //     include: 'companies',
+    //     where:{ id: req.userId },
+    // });
+    // console.log(user[0].dataValues)
+    const cantInEur = Math.round(items.amount * 10)
     const paymentI = await stripe.paymentIntents.create({
         amount: cantInEur,
         currency: 'usd',
@@ -41,16 +22,20 @@ export const paymentIntent = async (req, res) => {
 }
 
 export const stripeWebhook = async(req, res)=>{
-    console.log(req.body)
-    console.log(req.userId)
     const items = {
+        id: req.body.id,
         description: req.body.description,
-        date: new Date(Date.now()),
+        updated_at: new Date(Date.now()),
         amount: req.body.amount,
         user_id: req.userId,
-        status: 1
+        status_id: 2
     }
     console.log(items)
-    await stripeModel.createPayment(items)
-    res.json()
+    await stripeModel.updatePayment(items)
+    res.json({message:'payment succeded'})
+}
+
+export const getPayments = async (req, res) => {
+    const payments =  await stripeModel.getPayments(req.userId)
+    res.json(payments)
 }
