@@ -1,5 +1,6 @@
 import { Stripe } from "stripe";
 import stripeModel from "../models/Payments";
+import { getExcelRowCol } from "excel4node";
 const stripe = require('stripe')('sk_test_4eC39HqLyjWDarjtT1zdp7dc')
 const db = require('../../models')
 
@@ -28,7 +29,7 @@ export const stripeWebhook = async(req, res)=>{
         updated_at: new Date(Date.now()),
         amount: req.body.amount,
         user_id: req.userId,
-        status_id: 2
+        status_id: 1
     }
     console.log(items)
     await stripeModel.updatePayment(items)
