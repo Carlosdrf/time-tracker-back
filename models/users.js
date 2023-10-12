@@ -12,8 +12,9 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Users.hasMany(models.Payments, {foreignKey: 'user_id'})
-      Users.hasMany(models.companies, {foreignKey: 'user_id'})
+      Users.hasMany(models.companies_users, {foreignKey: 'user_id'})
       Users.hasMany(models.employees, {foreignKey: 'user_id'})
+      Users.hasMany(models.user_roles, {foreignKey: 'user_id'})
     }
   }
   Users.init({

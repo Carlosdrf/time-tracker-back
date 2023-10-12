@@ -116,20 +116,20 @@ INSERT INTO `users` (`id`, `fullname`, `email`, `password`) VALUES
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `user_role`
+-- Estructura de tabla para la tabla `user_roles`
 --
 
-CREATE TABLE `user_role` (
+CREATE TABLE `user_roles` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `role_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `user_role`
+-- Volcado de datos para la tabla `user_roles`
 --
 
-INSERT INTO `user_role` (`id`, `user_id`, `role_id`) VALUES
+INSERT INTO `user_roles` (`id`, `user_id`, `role_id`) VALUES
 (1, 8, 1),
 (5, 12, 1),
 (6, 1, 2),
@@ -166,9 +166,9 @@ ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `user_role`
+-- Indices de la tabla `user_roles`
 --
-ALTER TABLE `user_role`
+ALTER TABLE `user_roles`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_role` (`role_id`),
   ADD KEY `fk_user_id` (`user_id`);
@@ -202,9 +202,9 @@ ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
--- AUTO_INCREMENT de la tabla `user_role`
+-- AUTO_INCREMENT de la tabla `user_roles`
 --
-ALTER TABLE `user_role`
+ALTER TABLE `user_roles`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
@@ -224,9 +224,9 @@ ALTER TABLE `time_tracker`
   ADD CONSTRAINT `fk_user_time` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 --
--- Filtros para la tabla `user_role`
+-- Filtros para la tabla `user_roles`
 --
-ALTER TABLE `user_role`
+ALTER TABLE `user_roles`
   ADD CONSTRAINT `fk_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;

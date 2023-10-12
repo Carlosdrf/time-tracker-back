@@ -4,10 +4,10 @@ const userModel = {}
 
 userModel.getUsersList = async(name) => {
     if(name == ''){
-        return await pool.query('SELECT u.name, u.last_name, u.email, u.id FROM users u INNER JOIN user_role ur ON u.id = ur.user_id INNER JOIN roles r ON r.id = ur.role_id WHERE r.id = 2 ORDER BY u.name')
+        return await pool.query('SELECT u.name, u.last_name, u.email, u.id FROM users u INNER JOIN user_roles ur ON u.id = ur.user_id INNER JOIN roles r ON r.id = ur.role_id WHERE r.id = 2 ORDER BY u.name')
     }else{
         name = '%'+name+'%'
-        return await pool.query('SELECT u.name, u.last_name, u.email, u.id FROM users u INNER JOIN user_role ur ON u.id = ur.user_id INNER JOIN roles r ON r.id = ur.role_id WHERE r.id = 2 AND u.name LIKE ? ORDER BY u.name', [name])
+        return await pool.query('SELECT u.name, u.last_name, u.email, u.id FROM users u INNER JOIN user_roles ur ON u.id = ur.user_id INNER JOIN roles r ON r.id = ur.role_id WHERE r.id = 2 AND u.name LIKE ? ORDER BY u.name', [name])
     }
 }
 // testing

@@ -15,14 +15,14 @@ module.exports = {
       description: {
         type: Sequelize.STRING
       },
-      user_id: {
-        type: Sequelize.INTEGER,
-        onDelete: 'CASCADE',
-        references: {
-          model: 'users',
-          key: 'id'
-        }
-      }
+      // user_id: {
+      //   type: Sequelize.INTEGER,
+      //   onDelete: 'CASCADE',
+      //   references: {
+      //     model: 'users',
+      //     key: 'id'
+      //   }
+      // }
     });
   },
   async down(queryInterface, Sequelize) {

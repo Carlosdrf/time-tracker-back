@@ -30,7 +30,7 @@ roleModel.assignRole = /*#__PURE__*/function () {
         case 0:
           role_id = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : 2;
           _context2.next = 3;
-          return _database["default"].query('INSERT INTO user_role (user_id, role_id) VALUES(?,?)', [user_id, role_id]);
+          return _database["default"].query('INSERT INTO user_roles (user_id, role_id) VALUES(?,?)', [user_id, role_id]);
         case 3:
           return _context2.abrupt("return", _context2.sent);
         case 4:
@@ -49,7 +49,7 @@ roleModel.verifyUserRole = /*#__PURE__*/function () {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
           _context3.next = 2;
-          return _database["default"].query('SELECT role.name, role.id FROM role INNER JOIN user_role ur ON ur.role_id = role.id INNER JOIN users u ON u.id = ur.user_id WHERE u.id = ?', [user_id]);
+          return _database["default"].query('SELECT role.name, role.id FROM role INNER JOIN user_roles ur ON ur.role_id = role.id INNER JOIN users u ON u.id = ur.user_id WHERE u.id = ?', [user_id]);
         case 2:
           return _context3.abrupt("return", _context3.sent);
         case 3:
