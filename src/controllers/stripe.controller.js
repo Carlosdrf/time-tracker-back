@@ -2,7 +2,8 @@ import { Stripe } from "stripe";
 import stripeModel from "../models/Payments";
 import { getExcelRowCol } from "excel4node";
 const stripe = require('stripe')('sk_test_4eC39HqLyjWDarjtT1zdp7dc')
-const db = require('../../models')
+import db  from '../../models'
+import { where } from "sequelize";
 
 export const paymentIntent = async (req, res) => {
     const items = req.body
@@ -37,6 +38,7 @@ export const stripeWebhook = async(req, res)=>{
 }
 
 export const getPayments = async (req, res) => {
-    const payments =  await stripeModel.getPayments(req.userId)
+    const payments = await db.Payments.findAll({include: [{model: db.status}, {model: db.currencies}]})
+    // const payments =  await stripeModel.getPayments(req.userId)
     res.json(payments)
 }

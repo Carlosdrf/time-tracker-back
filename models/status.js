@@ -11,6 +11,9 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      // status.belongsTo('Payments', {foreignKey: 'id'})
+      status.hasOne(models.Payments, {foreignKey: 'status_id'})
+
     }
   }
   status.init({
@@ -18,6 +21,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'status',
+    tableName:'status',
+    timestamps: false
   });
   return status;
 };
