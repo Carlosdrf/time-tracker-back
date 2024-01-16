@@ -15,7 +15,7 @@ export const createUser = async (req, res) => {
   console.log(req.body)
   const { name, last_name, password, email, role } = req.body
 
-  const checkUser = await db.Users.findOne({ where: { email } })
+  const checkUser = await db.users.findOne({ where: { email } })
   if (checkUser) {
     res.status(400).json({ message: 'User Already Exists' })
     return 0
@@ -29,7 +29,7 @@ export const createUser = async (req, res) => {
     role,
     password: encryptPass,
   }
-  const user = await db.Users.create(userInfo)
+  const user = await db.users.create(userInfo)
   await db.user_roles.create({user_id:user.dataValues.id, role_id: role})
   if (roleModel.EMPLOYER_ROLE === role) {
     console.log('client role')
@@ -50,9 +50,8 @@ export const createUser = async (req, res) => {
 export const getEmployees = async (req, res) => {
   const company = await db.companies_users.findOne({ where: { user_id: req.userId } });
   const employees = await db.employees.findAll({
-    include: [{ model: db.Users }],
+    include: [{ model: db.users}],
     where: { company_id: company.company_id }
   })
-
   res.json(employees)
 }

@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      currencies.hasOne(models.Payments, {foreignKey: 'currency_id'})
+      currencies.hasOne(models.payments, {foreignKey: 'currency_id'})
     }
   }
   currencies.init({

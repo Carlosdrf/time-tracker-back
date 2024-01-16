@@ -18,13 +18,13 @@ userModel.getUsersList = /*#__PURE__*/function () {
             break;
           }
           _context.next = 3;
-          return _database["default"].query('SELECT u.name, u.last_name, u.email, u.id FROM users u INNER JOIN user_roles ur ON u.id = ur.user_id INNER JOIN role r ON r.id = ur.role_id WHERE r.id = 2 ORDER BY u.name');
+          return _database["default"].query('SELECT u.name, u.last_name, u.email, u.id FROM users u INNER JOIN user_roles ur ON u.id = ur.user_id INNER JOIN roles r ON r.id = ur.role_id WHERE r.id = 2 ORDER BY u.name');
         case 3:
           return _context.abrupt("return", _context.sent);
         case 6:
           name = '%' + name + '%';
           _context.next = 9;
-          return _database["default"].query('SELECT u.name, u.last_name, u.email, u.id FROM users u INNER JOIN user_roles ur ON u.id = ur.user_id INNER JOIN role r ON r.id = ur.role_id WHERE r.id = 2 AND u.name LIKE ? ORDER BY u.name', [name]);
+          return _database["default"].query('SELECT u.name, u.last_name, u.email, u.id FROM users u INNER JOIN user_roles ur ON u.id = ur.user_id INNER JOIN roles r ON r.id = ur.role_id WHERE r.id = 2 AND u.name LIKE ? ORDER BY u.name', [name]);
         case 9:
           return _context.abrupt("return", _context.sent);
         case 10:

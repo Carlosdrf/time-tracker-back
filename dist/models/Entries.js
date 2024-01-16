@@ -20,12 +20,12 @@ models.getEntries = /*#__PURE__*/function () {
             break;
           }
           _context.next = 4;
-          return _database["default"].query('SELECT tt.*, t.description FROM time_tracker tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? ORDER BY tt.start_time DESC', [user_id]);
+          return _database["default"].query('SELECT tt.*, t.description FROM entries tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? ORDER BY tt.start_time DESC', [user_id]);
         case 4:
           return _context.abrupt("return", _context.sent);
         case 7:
           _context.next = 9;
-          return _database["default"].query('SELECT tt.*, t.description FROM time_tracker tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? AND tt.status = 1 AND tt.date BETWEEN ? AND ? ORDER BY tt.start_time DESC', [user_id, dateRange]);
+          return _database["default"].query('SELECT tt.*, t.description FROM entries tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? AND tt.status = 1 AND tt.date BETWEEN ? AND ? ORDER BY tt.start_time DESC', [user_id, dateRange]);
         case 9:
           return _context.abrupt("return", _context.sent);
         case 10:
@@ -44,7 +44,7 @@ models.getAllEntries = /*#__PURE__*/function () {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
           _context2.next = 2;
-          return _database["default"].query('SELECT * FROM time_tracker WHERE start_time BETWEEN ? AND ?;', [dateRange.start_time, dateRange.end_time]);
+          return _database["default"].query('SELECT * FROM entries WHERE start_time BETWEEN ? AND ?;', [dateRange.start_time, dateRange.end_time]);
         case 2:
           return _context2.abrupt("return", _context2.sent);
         case 3:
@@ -59,7 +59,7 @@ models.getAllEntries = /*#__PURE__*/function () {
 }();
 
 // models.getUsersEntries = async(user_id) => {
-//     return await pool.query('SELECT tt.*, t.description FROM time_tracker tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? and tt.status = 1 ORDER BY tt.start_time DESC', [user_id]);
+//     return await pool.query('SELECT tt.*, t.description FROM entries tt LEFT JOIN tasks t ON t.id = tt.task_id WHERE tt.user_id = ? and tt.status = 1 ORDER BY tt.start_time DESC', [user_id]);
 // }
 
 models.getStartedEntry = /*#__PURE__*/function () {
@@ -69,7 +69,7 @@ models.getStartedEntry = /*#__PURE__*/function () {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
           _context3.next = 2;
-          return _database["default"].query('SELECT id, status, start_time FROM time_tracker WHERE user_id = ? AND status = 0', [user_id]);
+          return _database["default"].query('SELECT id, status, start_time FROM entries WHERE user_id = ? AND status = 0', [user_id]);
         case 2:
           row = _context3.sent;
           return _context3.abrupt("return", row);
@@ -90,7 +90,7 @@ models.closeCurrentEntry = /*#__PURE__*/function () {
       while (1) switch (_context4.prev = _context4.next) {
         case 0:
           _context4.next = 2;
-          return _database["default"].query('UPDATE time_tracker SET ? WHERE user_id = ? AND id = ? AND status = 0', [date, user_id, entry_id]);
+          return _database["default"].query('UPDATE entries SET ? WHERE user_id = ? AND id = ? AND status = 0', [date, user_id, entry_id]);
         case 2:
           row = _context4.sent;
           return _context4.abrupt("return", row);
@@ -110,7 +110,7 @@ models.createEntry = /*#__PURE__*/function () {
       while (1) switch (_context5.prev = _context5.next) {
         case 0:
           _context5.next = 2;
-          return _database["default"].query('INSERT INTO time_tracker SET ?', [data]);
+          return _database["default"].query('INSERT INTO entries SET ?', [data]);
         case 2:
           return _context5.abrupt("return", _context5.sent);
         case 3:
@@ -167,7 +167,7 @@ models.deleteById = /*#__PURE__*/function () {
       while (1) switch (_context8.prev = _context8.next) {
         case 0:
           _context8.next = 2;
-          return _database["default"].query('DELETE FROM time_tracker WHERE id = ?', [id]);
+          return _database["default"].query('DELETE FROM entries WHERE id = ?', [id]);
         case 2:
           return _context8.abrupt("return", _context8.sent);
         case 3:
@@ -186,7 +186,7 @@ models.updateEntryById = /*#__PURE__*/function () {
       while (1) switch (_context9.prev = _context9.next) {
         case 0:
           _context9.next = 2;
-          return _database["default"].query('UPDATE time_tracker SET ? WHERE id = ?', [data, id]);
+          return _database["default"].query('UPDATE entries SET ? WHERE id = ?', [data, id]);
         case 2:
           return _context9.abrupt("return", _context9.sent);
         case 3:

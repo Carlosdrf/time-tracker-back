@@ -3,11 +3,12 @@
 var _mysql = _interopRequireDefault(require("mysql"));
 var _util = require("util");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+require('dotenv').config();
 var pool = _mysql["default"].createPool({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'i-nimble_db'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 });
 pool.getConnection(function (err, connection) {
   if (err) {

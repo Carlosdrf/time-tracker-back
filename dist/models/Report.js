@@ -21,7 +21,7 @@ models.getReport = /*#__PURE__*/function () {
             break;
           }
           _context.next = 4;
-          return _database["default"].query('SELECT u.id, u.name, u.email, u.last_name, tt.date, tt.start_time, tt.end_time, t.description FROM users u INNER JOIN time_tracker tt ON tt.user_id = u.id INNER JOIN tasks t ON t.id = tt.task_id WHERE tt.status = 1 AND tt.start_time BETWEEN ? AND ? ORDER BY u.email asc', [dateRange.start_time, dateRange.end_time]);
+          return _database["default"].query('SELECT u.id, u.name, u.email, u.last_name, tt.date, tt.start_time, tt.end_time, t.description FROM users u INNER JOIN entries tt ON tt.user_id = u.id INNER JOIN tasks t ON t.id = tt.task_id WHERE tt.status = 1 AND tt.start_time BETWEEN ? AND ? ORDER BY u.email asc', [dateRange.start_time, dateRange.end_time]);
         case 4:
           row = _context.sent;
           _context.next = 16;
@@ -32,14 +32,14 @@ models.getReport = /*#__PURE__*/function () {
             break;
           }
           _context.next = 10;
-          return _database["default"].query('SELECT u.id, u.name, u.email, u.last_name, tt.date, tt.task_id, tt.start_time, tt.end_time, t.description FROM users u INNER JOIN time_tracker tt ON tt.user_id = u.id INNER JOIN tasks t ON t.id = tt.task_id WHERE u.id = ? AND tt.status = 1', [user_id]);
+          return _database["default"].query('SELECT u.id, u.name, u.email, u.last_name, tt.date, tt.task_id, tt.start_time, tt.end_time, t.description FROM users u INNER JOIN entries tt ON tt.user_id = u.id INNER JOIN tasks t ON t.id = tt.task_id WHERE u.id = ? AND tt.status = 1', [user_id]);
         case 10:
           row = _context.sent;
           _context.next = 16;
           break;
         case 13:
           _context.next = 15;
-          return _database["default"].query('SELECT u.id, u.name, u.email, u.last_name, tt.date, tt.start_time, tt.end_time, t.description FROM users u INNER JOIN time_tracker tt ON tt.user_id = u.id INNER JOIN tasks t ON t.id = tt.task_id WHERE u.id = ? AND tt.status = 1 AND tt.start_time BETWEEN ? AND ? ORDER BY u.email asc', [user_id, dateRange.start_time, dateRange.end_time]);
+          return _database["default"].query('SELECT u.id, u.name, u.email, u.last_name, tt.date, tt.start_time, tt.end_time, t.description FROM users u INNER JOIN entries tt ON tt.user_id = u.id INNER JOIN tasks t ON t.id = tt.task_id WHERE u.id = ? AND tt.status = 1 AND tt.start_time BETWEEN ? AND ? ORDER BY u.email asc', [user_id, dateRange.start_time, dateRange.end_time]);
         case 15:
           row = _context.sent;
         case 16:

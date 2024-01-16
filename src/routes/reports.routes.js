@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {authJwt}  from "../middlewares";
-import * as reportController from "../controllers/report.cron";
+import * as reportController from "../controllers/report.controller";
 const router = Router()
 
 router.post('/', authJwt.verifyToken, reportController.controller)

@@ -12,7 +12,8 @@ export const paymentIntent = async (req, res) => {
     //     where:{ id: req.userId },
     // });
     // console.log(user[0].dataValues)
-    const cantInEur = Math.round(items.amount * 10)
+    const cantInEur = Math.round(items.amount * 100)
+    console.log(cantInEur)
     const paymentI = await stripe.paymentIntents.create({
         amount: cantInEur,
         currency: 'usd',
@@ -38,7 +39,7 @@ export const stripeWebhook = async(req, res)=>{
 }
 
 export const getPayments = async (req, res) => {
-    const payments = await db.Payments.findAll({include: [{model: db.status}, {model: db.currencies}]})
+    const payments = await db.payments.findAll({include: [{model: db.status}, {model: db.currencies}]})
     // const payments =  await stripeModel.getPayments(req.userId)
     res.json(payments)
 }

@@ -16,7 +16,7 @@
   "production": {
     "username": "time_tracker",
     "password": "inimble.restapi",
-    "database": "inimble_db",
+    "database": "i-nimble_db",
     "host": "127.0.0.1",
     "dialect": "mysql"
   }

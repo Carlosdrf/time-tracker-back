@@ -40,7 +40,7 @@ export const getEntries = async(req, res) =>{
 
 export const getAllEntries = async(req, res) => {
     const dateRange = {
-        start_time: await format.UTCformat(req.body.start_time),
+        start_time: await format.UTCStart(req.body.start_time),
         end_time: await format.UTCend(req.body.end_time)
     }
     const result = await models.getAllEntries(dateRange)
@@ -54,7 +54,7 @@ export const getUsersEntries = async(req, res) => {
         result = await models.getEntries(user_id)
     }else{
         const dateRange = {
-            start_time: await format.UTCformat(req.body.start_time),
+            start_time: await format.UTCStart(req.body.start_time),
             end_time: await format.UTCend(req.body.end_time)
         }
         result = await reportModel.getReport(dateRange, user_id)
@@ -64,12 +64,18 @@ export const getUsersEntries = async(req, res) => {
 
 export const createEntry = async(req, res) =>{
     const date = moment().format('YYYY-MM-DD')
-    const start_time = moment().format('YYYY-MM-DD HH:mm:ss')
-    // console.log(req.body.task)
+    console.log('empieza entry')
+    console.log('locale string', new Date().toLocaleString())
+    console.log('utc format', new Date().toUTCString())
+    const start_time = await format.UTCFormat(moment().format('YYYY-MM-DD HH:mm:ss'))
+    console.log(start_time)
+    const start_string = new Date(moment())
+    console.log('start_string', start_string)
+
     const taskId = await models.createTask(req.body.task)
     const data = {
-        start_time,
-        end_time: start_time,
+        start_time: start_string,
+        end_time: start_string,
         date,
         user_id: req.userId,
         status: req.body.status,
