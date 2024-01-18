@@ -27,7 +27,8 @@ export const report = async function cronReport() {
 export const getRange = async (req, res) => {
   const end_time = await format.UTCend(req.body.lastSelect);
   const start_time = await format.UTCStart(req.body.firstSelect);
-  console.log("start time: ", start_time);
+  console.log('RANGE REPORT FUNCTION')
+  console.log("start time: ", req.body);
   const dateRange = {
     start_time,
     end_time,

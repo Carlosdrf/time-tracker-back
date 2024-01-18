@@ -9,36 +9,37 @@ import config from '../config'
 import { io } from "../app";
 
 
-export const genNewToken = async(req) => {
+export const genNewToken = async (req) => {
     let last_active = await usersModel.verifyLastActive(req.userId)
     let token
     const currentTime = Date.now()
     last_active = last_active[0].last_active
-    const diff = Math.floor((currentTime - last_active.getTime())/(1000*60*60))
+    const diff = Math.floor((currentTime - last_active.getTime()) / (1000 * 60 * 60))
     // console.log(diff)
-    if(diff === '23'){
+    if (diff === '23') {
         const role = await roleModel.verifyUserRole(req.userId)
-        token = jwt.sign({id: req.userId, role: role[0].id}, config.SECRET,{
+        token = jwt.sign({ id: req.userId, role: role[0].id }, config.SECRET, {
             expiresIn: 86400
         })
-    }else{
+    } else {
         token = null;
     }
     return token;
 }
 
-export const getEntries = async(req, res) =>{
+export const getEntries = async (req, res) => {
     const token = await genNewToken(req)
     let result
-    if(req.role == 1){
+    if (req.role == 1) {
         result = await usersModel.getAllEntries()
-    }else{
+    } else {
         result = await models.getEntries(req.userId)
     }
-    res.status(200).json({result, token})
+    console.log("first entry ", result[0].start_time)
+    res.status(200).json({ result, token })
 }
 
-export const getAllEntries = async(req, res) => {
+export const getAllEntries = async (req, res) => {
     const dateRange = {
         start_time: await format.UTCStart(req.body.start_time),
         end_time: await format.UTCend(req.body.end_time)
@@ -47,12 +48,12 @@ export const getAllEntries = async(req, res) => {
     res.json(result)
 }
 // users entries
-export const getUsersEntries = async(req, res) => {
+export const getUsersEntries = async (req, res) => {
     const user_id = req.body.user_id
     let result
-    if(req.body.start_time == null){
+    if (req.body.start_time == null) {
         result = await models.getEntries(user_id)
-    }else{
+    } else {
         const dateRange = {
             start_time: await format.UTCStart(req.body.start_time),
             end_time: await format.UTCend(req.body.end_time)
@@ -62,71 +63,85 @@ export const getUsersEntries = async(req, res) => {
     res.json(result)
 }
 
-export const createEntry = async(req, res) =>{
-    const date = moment().format('YYYY-MM-DD')
-    console.log('empieza entry')
-    console.log('locale string', new Date().toLocaleString())
-    console.log('utc format', new Date().toUTCString())
-    const start_time = await format.UTCFormat(moment().format('YYYY-MM-DD HH:mm:ss'))
-    console.log(start_time)
-    const start_string = new Date(moment())
-    console.log('start_string', start_string)
-
-    const taskId = await models.createTask(req.body.task)
-    const data = {
-        start_time: start_string,
-        end_time: start_string,
-        date,
-        user_id: req.userId,
-        status: req.body.status,
-        task_id: taskId.insertId
-    }
-    const result = await models.createEntry(data)
-    if(result){
-        io.emit('server:message', result.insertId)
-        io.emit('server:admin:newEntry')
-        // io.emit('server:admin:newEntry', [req.userId, data])
-        res.json(result.insertId)
-    }else{
-        res.json('There was a Trouble')
-    }
-}
-
-export const getStartedEntry = async(req, res) =>{
+export const getStartedEntry = async (req, res) => {
     const startedEntry = await models.getStartedEntry(req.userId)
     // console.log(startedEntry)
     io.emit('server:message', startedEntry);
     res.json(startedEntry);
 }
 
-export const getUserEntriesStatus = async(req, res) => {
+export const createEntry = async (req, res) => {
+    const date = moment().format('YYYY-MM-DD')
+    const { start_time, status } = req.body
+    console.log('CREATE ENTRY')
+    console.log('frontend time ', new Date(start_time));
+
+    const taskId = await models.createTask(req.body.task)
+    const data = {
+        start_time: new Date(start_time),
+        end_time: new Date(start_time),
+        date,
+        user_id: req.userId,
+        status,
+        task_id: taskId.insertId
+    }
+    const result = await models.createEntry(data)
+    if (result) {
+        io.emit('server:message', result.insertId)
+        io.emit('server:admin:newEntry')
+        // io.emit('server:admin:newEntry', [req.userId, data])
+        res.json(result.insertId)
+    } else {
+        res.json('There was a Trouble')
+    }
+}
+
+export const closeEntry = async (req, res) => {
+
+    let entryData = ({
+        end_time: moment().format('YYYY-MM-DD HH:mm:ss'),
+        status: 1,
+    })
+    const result = await models.closeCurrentEntry(req.params.entryId, entryData, req.userId)
+
+    if (result) {
+        // io.emit('server:closedEntry', [req.userId, entryData])
+        io.emit('server:closedEntry')
+
+        res.status(200).json({ message: 'closed' })
+    } else {
+        res.status(400).json({ message: "there whas an error" })
+    }
+}
+
+export const getUserEntriesStatus = async (req, res) => {
     const result = await models.getStartedEntry(req.body.id)
     res.json(result)
 }
 
-export const updateEntryById = async(req, res) =>{
-    const {start_time, end_time, date, description, task_id} = req.body
+export const updateEntryById = async (req, res) => {
+    const { start_time, end_time, date, description, task_id } = req.body
     // console.log(description, task_id, date)
     const taskData = ({
         id: task_id,
         description
     })
     await models.updateTask(taskData)
-    
+
     const entryData = ({
         start_time: moment(date).format('YYYY-MM-DD') + ' ' + moment(start_time).format('HH:mm:ss'),
         end_time: moment(date).format('YYYY-MM-DD') + ' ' + moment(end_time).format('HH:mm:ss'),
         date: moment(date).format('YYYY-MM-DD'),
     })
     const result = await models.updateEntryById(req.params.entryId, entryData)
-    if(result){
-        res.status(200).json({message:'Updated'})
-    }else{
-        res.status(400).json({message:"there whas an error"})
+    if (result) {
+        res.status(200).json({ message: 'Updated' })
+    } else {
+        res.status(400).json({ message: "there whas an error" })
     }
 }
-export const updateTaskById = async(req, res) => {
-    const {description} = req.body
+export const updateTaskById = async (req, res) => {
+    const { description } = req.body
     console.log(description, req.params.task_id)
     const taskData = ({
         id: req.params.task_id,
@@ -134,36 +149,19 @@ export const updateTaskById = async(req, res) => {
     })
     const updated = await models.updateTask(taskData)
     console.log(updated)
-    if(updated){
-        res.status(200).json({message: 'Task Updated'})
-    }else{
-        res.status(400).json({message:"there whas an error"})
+    if (updated) {
+        res.status(200).json({ message: 'Task Updated' })
+    } else {
+        res.status(400).json({ message: "there whas an error" })
     }
 }
 
-export const closeEntry = async(req, res) =>{
-    const {end_time} = req.body
-    // console.log(req.userId);
-    let entryData = ({
-        end_time: moment().format('YYYY-MM-DD HH:mm:ss'),
-        status: 1,
-    })
-    const result = await models.closeCurrentEntry(req.params.entryId, entryData, req.userId)
 
-    if(result){
-        // io.emit('server:closedEntry', [req.userId, entryData])
-        io.emit('server:closedEntry')
-        
-        res.status(200).json({message:'closed'})
-    }else{
-        res.status(400).json({message:"there whas an error"})
-    }
-}
-export const deleteProductById = async(req, res) =>{
+export const deleteProductById = async (req, res) => {
     const result = await models.deleteById(req.params.entryId)
-    if(result){
+    if (result) {
         res.json(result)
-    }else{
+    } else {
         res.json('error')
     }
 }
