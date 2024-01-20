@@ -28,12 +28,12 @@ export const getRange = async (req, res) => {
   const end_time = await format.UTCend(req.body.lastSelect);
   const start_time = await format.UTCStart(req.body.firstSelect);
   console.log('RANGE REPORT FUNCTION')
-  console.log("start time: ", req.body);
+  console.log("end time: ",new Date(new Date(req.body.lastSelect).setHours(23, 59, 59)));
   const dateRange = {
-    start_time,
-    end_time,
+    start_time: new Date(req.body.firstSelect),
+    end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
   };
-
+  // return;
   if (req.role == roleModel.ADMIN_ROLE && req.body.user_id == null) {
     const row = await models.getReport(dateRange);
     res.json(row);

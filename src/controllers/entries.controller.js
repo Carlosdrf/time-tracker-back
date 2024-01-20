@@ -35,7 +35,7 @@ export const getEntries = async (req, res) => {
     } else {
         result = await models.getEntries(req.userId)
     }
-    console.log("first entry ", result[0].start_time)
+    console.log("first entry ", result[0].start_time);
     res.status(200).json({ result, token })
 }
 
