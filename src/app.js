@@ -42,7 +42,7 @@ io.on("connection", (socket) => {
   });
 });
 
-createRoles();
+// createRoles();
 // insertRoles();
 app.use(cors());
 app.use(morgan("dev"));

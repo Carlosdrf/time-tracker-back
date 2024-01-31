@@ -15,7 +15,6 @@ export const genNewToken = async (req) => {
     const currentTime = Date.now()
     last_active = last_active[0].last_active
     const diff = Math.floor((currentTime - last_active.getTime()) / (1000 * 60 * 60))
-    // console.log(diff)
     if (diff === '23') {
         const role = await roleModel.verifyUserRole(req.userId)
         token = jwt.sign({ id: req.userId, role: role[0].id }, config.SECRET, {
@@ -35,15 +34,15 @@ export const getEntries = async (req, res) => {
     } else {
         result = await models.getEntries(req.userId)
     }
-    console.log("first entry ", result[0].start_time);
     res.status(200).json({ result, token })
 }
 
 export const getAllEntries = async (req, res) => {
     const dateRange = {
-        start_time: await format.UTCStart(req.body.start_time),
-        end_time: await format.UTCend(req.body.end_time)
+        start_time: new Date(req.body.start_time),
+        end_time: new Date(new Date(req.body.end_time).setHours(23, 59, 59))
     }
+
     const result = await models.getAllEntries(dateRange)
     res.json(result)
 }
@@ -65,7 +64,6 @@ export const getUsersEntries = async (req, res) => {
 
 export const getStartedEntry = async (req, res) => {
     const startedEntry = await models.getStartedEntry(req.userId)
-    // console.log(startedEntry)
     io.emit('server:message', startedEntry);
     res.json(startedEntry);
 }
@@ -73,8 +71,6 @@ export const getStartedEntry = async (req, res) => {
 export const createEntry = async (req, res) => {
     const date = moment().format('YYYY-MM-DD')
     const { start_time, status } = req.body
-    console.log('CREATE ENTRY')
-    console.log('frontend time ', new Date(start_time));
 
     const taskId = await models.createTask(req.body.task)
     const data = {
@@ -121,7 +117,6 @@ export const getUserEntriesStatus = async (req, res) => {
 
 export const updateEntryById = async (req, res) => {
     const { start_time, end_time, date, description, task_id } = req.body
-    // console.log(description, task_id, date)
     const taskData = ({
         id: task_id,
         description

@@ -27,7 +27,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `companies`
 --
 
-CREATE TABLE `companies` (
+CREATE TABLE IF NOT EXISTS `companies` (
   `id` int(11) NOT NULL,
   `name` varchar(255) DEFAULT NULL,
   `description` varchar(255) DEFAULT NULL
@@ -46,7 +46,7 @@ INSERT INTO `companies` (`id`, `name`, `description`) VALUES
 -- Table structure for table `companies_users`
 --
 
-CREATE TABLE `companies_users` (
+CREATE TABLE IF NOT EXISTS `companies_users` (
   `id` int(11) NOT NULL,
   `company_id` int(11) DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL
@@ -65,7 +65,7 @@ INSERT INTO `companies_users` (`id`, `company_id`, `user_id`) VALUES
 -- Table structure for table `currencies`
 --
 
-CREATE TABLE `currencies` (
+CREATE TABLE IF NOT EXISTS `currencies` (
   `id` int(11) NOT NULL,
   `name` varchar(255) DEFAULT NULL,
   `description` varchar(255) DEFAULT NULL
@@ -84,7 +84,7 @@ INSERT INTO `currencies` (`id`, `name`, `description`) VALUES
 -- Table structure for table `employees`
 --
 
-CREATE TABLE `employees` (
+CREATE TABLE IF NOT EXISTS `employees` (
   `id` int(11) NOT NULL,
   `user_id` int(11) DEFAULT NULL,
   `company_id` int(11) DEFAULT NULL
@@ -105,7 +105,7 @@ INSERT INTO `employees` (`id`, `user_id`, `company_id`) VALUES
 -- Table structure for table `entries`
 --
 
-CREATE TABLE `entries` (
+CREATE TABLE IF NOT EXISTS `entries` (
   `id` int(11) NOT NULL,
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
@@ -262,7 +262,7 @@ INSERT INTO `entries` (`id`, `start_time`, `end_time`, `date`, `status`, `user_i
 -- Table structure for table `payments`
 --
 
-CREATE TABLE `payments` (
+CREATE TABLE IF NOT EXISTS `payments` (
   `id` int(11) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
   `amount` float DEFAULT NULL,
@@ -289,7 +289,7 @@ INSERT INTO `payments` (`id`, `description`, `amount`, `user_id`, `status_id`, `
 -- Table structure for table `roles`
 --
 
-CREATE TABLE `roles` (
+CREATE TABLE IF NOT EXISTS `roles` (
   `id` int(11) NOT NULL,
   `name` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -309,7 +309,7 @@ INSERT INTO `roles` (`id`, `name`) VALUES
 -- Table structure for table `sequelizemeta`
 --
 
--- CREATE TABLE `sequelizemeta` (
+-- CREATE TABLE IF NOT EXISTS `sequelizemeta` (
 --   `name` varchar(255) NOT NULL
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -336,7 +336,7 @@ INSERT INTO `roles` (`id`, `name`) VALUES
 -- Table structure for table `status`
 --
 
-CREATE TABLE `status` (
+CREATE TABLE IF NOT EXISTS `status` (
   `id` int(11) NOT NULL,
   `name` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -355,7 +355,7 @@ INSERT INTO `status` (`id`, `name`) VALUES
 -- Table structure for table `tasks`
 --
 
-CREATE TABLE `tasks` (
+CREATE TABLE IF NOT EXISTS `tasks` (
   `id` int(11) NOT NULL,
   `description` varchar(300) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -658,7 +658,7 @@ INSERT INTO `tasks` (`id`, `description`) VALUES
 -- Table structure for table `users`
 --
 
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
   `last_name` varchar(100) NOT NULL,
@@ -686,7 +686,7 @@ INSERT INTO `users` (`id`, `name`, `last_name`, `email`, `password`, `last_activ
 -- Table structure for table `user_roles`
 --
 
-CREATE TABLE `user_roles` (
+CREATE TABLE IF NOT EXISTS `user_roles` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `role_id` int(11) NOT NULL

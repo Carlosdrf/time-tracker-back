@@ -28,11 +28,11 @@ export const getRange = async (req, res) => {
   const end_time = await format.UTCend(req.body.lastSelect);
   const start_time = await format.UTCStart(req.body.firstSelect);
   console.log('RANGE REPORT FUNCTION')
-  console.log("end time: ",new Date(new Date(req.body.lastSelect).setHours(23, 59, 59)));
   const dateRange = {
     start_time: new Date(req.body.firstSelect),
     end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
   };
+  console.log(dateRange)
   // return;
   if (req.role == roleModel.ADMIN_ROLE && req.body.user_id == null) {
     const row = await models.getReport(dateRange);
@@ -66,16 +66,15 @@ export const getRange = async (req, res) => {
     res.json(row);
   }
 };
-export const controller = async (req, res) => {
+export const getReport = async (req, res) => {
   console.log(req.body);
-  const end_time = await format.UTCend(req.body.lastSelect);
-  const start_time = await format.UTCStart(req.body.firstSelect);
+  const end_time = new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
+  const start_time = new Date(req.body.firstSelect)
   const dateRange = {
     start_time,
-    end_time,
+    end_time
   };
-  // res.json(test)
-  // return 0
+
   const workbook = new excel.Workbook();
   let nombreArchivo = "report i-nimble";
 
@@ -154,23 +153,23 @@ export const controller = async (req, res) => {
     console.log(test);
     worksheet
       .cell(i, 2)
-      .string(moment.tz(element.start_time, "America/Caracas").format("dddd"))
+      .string(moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('dddd'))
       .style(contColumnStyle);
     worksheet
       .cell(i, 3)
       .string(
-        moment.tz(element.start_time, "America/Caracas").format("DD-MM-YYYY")
+        moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('YYYY-MM-DD')
       )
       .style(contColumnStyle);
     worksheet
       .cell(i, 4)
       .string(
-        moment.tz(element.start_time, "America/Caracas").format("HH:mm:ss")
+        moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('HH:mm:ss')
       )
       .style(contColumnStyle);
     worksheet
       .cell(i, 5)
-      .string(moment.tz(element.end_time, "America/Caracas").format("HH:mm:ss"))
+      .string(moment(new Date(element.end_time)).utcOffset(-req.body.timezone).format('HH:mm:ss'))
       .style(contColumnStyle);
     worksheet
       .cell(i, 6)
