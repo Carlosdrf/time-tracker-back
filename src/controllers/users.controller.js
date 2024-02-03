@@ -1,26 +1,27 @@
 import usersModel from "../models/User";
+const { Op } = require('sequelize');
+
 import * as format from "../services/utc.format";
-import db from '../../models'
-import roleModel from '../models/Role'
+import db from "../../models";
+import roleModel from "../models/Role";
 import { where } from "sequelize";
 
 export const getUsers = async (req, res) => {
   // const token = await genNewToken(req)
-  // console.log(req.body)
   const result = await usersModel.getUsersList(req.body.searchField);
   res.json(result);
 };
 
 export const createUser = async (req, res) => {
-  console.log(req.body)
-  const { name, last_name, password, email, role } = req.body
+  console.log(req.body);
+  const { name, last_name, password, email, role } = req.body;
 
-  const checkUser = await db.users.findOne({ where: { email } })
+  const checkUser = await db.users.findOne({ where: { email } });
   if (checkUser) {
-    res.status(400).json({ message: 'User Already Exists' })
-    return 0
+    res.status(400).json({ message: "User Already Exists" });
+    return 0;
   }
-  const encryptPass = await usersModel.encryptPass(password)
+  const encryptPass = await usersModel.encryptPass(password);
 
   let userInfo = {
     name,
@@ -28,30 +29,50 @@ export const createUser = async (req, res) => {
     email,
     role,
     password: encryptPass,
-  }
-  const user = await db.users.create(userInfo)
-  await db.user_roles.create({user_id:user.dataValues.id, role_id: role})
+  };
+  const user = await db.users.create(userInfo);
+  await db.user_roles.create({ user_id: user.dataValues.id, role_id: role });
   if (roleModel.EMPLOYER_ROLE === role) {
-    console.log('client role')
-    
-    let company = { name: req.body.company.name, description: req.body.company.description }
-    let newCompany = await db.companies.create(company)
-    await db.companies_users.create({user_id: user.dataValues.id, company_id: newCompany.dataValues.id})
+    console.log("client role");
+
+    let company = {
+      name: req.body.company.name,
+      description: req.body.company.description,
+    };
+    let newCompany = await db.companies.create(company);
+    await db.companies_users.create({
+      user_id: user.dataValues.id,
+      company_id: newCompany.dataValues.id,
+    });
   } else if (roleModel.USER_ROLE === role) {
-    let company_id = req.body.company.id
-    await db.employees.create({user_id: user.dataValues.id, company_id})
+    let company_id = req.body.company.id;
+    await db.employees.create({ user_id: user.dataValues.id, company_id });
   }
 
-  console.log(user.dataValues.id)
+  console.log(user.dataValues.id);
 
-  res.json(req.body)
+  res.json(req.body);
 };
 
 export const getEmployees = async (req, res) => {
-  const company = await db.companies_users.findOne({ where: { user_id: req.userId } });
+  const company = await db.companies_users.findOne({
+    where: { user_id: req.userId },
+  });
   const employees = await db.employees.findAll({
-    include: [{ model: db.users}],
-    where: { company_id: company.company_id }
-  })
-  res.json(employees)
-}
+    include: [{ model: db.users }],
+    where: { company_id: company.company_id },
+  });
+  res.json(employees);
+};
+
+export const verifyUsername = async (req, res) => {
+  const {email, userId} = req.body;
+  console.log(email)
+  const userExists = await db.users.findOne({
+    where: { email , id: { [Op.ne]: userId }},
+  });
+
+  if (userExists)
+    return res.status(300).json({ message: "that user is taken" });
+  res.status(200).json({ message: "you can use the username" });
+};

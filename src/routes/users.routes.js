@@ -9,4 +9,6 @@ router.post('/create', authJwt.verifyToken, userController.createUser)
 
 router.get('/employees', authJwt.verifyToken, userController.getEmployees)
 
+router.post('/verifyusername', authJwt.verifyToken, userController.verifyUsername)
+
 export default router;
