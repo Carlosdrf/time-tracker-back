@@ -2,14 +2,71 @@ import usersModel from "../models/User";
 const { Op } = require('sequelize');
 
 import * as format from "../services/utc.format";
-import db from "../../models";
+import db, { sequelize } from "../../models";
 import roleModel from "../models/Role";
 import { where } from "sequelize";
 
 export const getUsers = async (req, res) => {
   // const token = await genNewToken(req)
+  console.log(req.body)
   const result = await usersModel.getUsersList(req.body.searchField);
-  res.json(result);
+
+  const querySearch = req.body.searchField !== '' ?
+    {
+      [Op.or]: [
+        [{ name: { [Op.like]: `%${req.body.searchField}%` } }],
+        [{ last_name: { [Op.like]: `%${req.body.searchField}%` } }]
+      ]
+    }
+    : {}
+  req.body.filter = 'filter'
+  const queryFilter = req.body.filter !== '' ?
+    {
+      [Op.and]: [
+        [{ name: req.body.filter }]
+      ]
+    } : {}
+  console.log(queryFilter)
+  const seq = await db.users.findAll({
+    include: [
+      {
+        model: db.user_roles, required: false,
+        // attributes: [],
+        include: [{
+          model: db.roles,
+          required: false,
+          attributes: ['id', 'name']
+        }],
+      },
+      {
+        model: db.companies_users, required: false,
+        // attributes: [],
+        include: [{
+          model: db.companies,
+          required: false,
+          attributes: ['id', 'name', 'description']
+        }],
+      }
+    ],
+    where: querySearch,
+    attributes: {
+      exclude: ['password'],
+    }
+  })
+  const sample = seq.map(item => {
+    // item.dataValues.role = 'string'
+    // console.log(item.dataValues)
+    item.dataValues.user_roles.forEach(user_role=>{
+      console.log(user_role.dataValues.role.dataValues.id)
+      item.dataValues.role = user_role.dataValues.role.dataValues.id
+      item.dataValues.role_name = user_role.dataValues.role.dataValues.name
+      // user_role.dataValues.role.map(roles=>{
+      //   console.log(roles.dataValues)
+      // })
+    })
+    return item
+  })
+  res.json(sample);
 };
 
 export const createUser = async (req, res) => {
@@ -66,10 +123,10 @@ export const getEmployees = async (req, res) => {
 };
 
 export const verifyUsername = async (req, res) => {
-  const {email, userId} = req.body;
+  const { email, userId } = req.body;
   console.log(email)
   const userExists = await db.users.findOne({
-    where: { email , id: { [Op.ne]: userId }},
+    where: { email, id: { [Op.ne]: userId } },
   });
 
   if (userExists)
