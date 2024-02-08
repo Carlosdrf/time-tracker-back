@@ -4,9 +4,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getUsers = exports.createUser = void 0;
+exports.getUsers = exports.getEmployees = exports.createUser = void 0;
 var _User = _interopRequireDefault(require("../models/User"));
 var format = _interopRequireWildcard(require("../services/utc.format"));
+var _models = _interopRequireDefault(require("../../models"));
+var _Role = _interopRequireDefault(require("../models/Role"));
+var _sequelize = require("sequelize");
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function _getRequireWildcardCache(nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") { return { "default": obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj["default"] = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
@@ -37,12 +40,86 @@ var getUsers = /*#__PURE__*/function () {
 exports.getUsers = getUsers;
 var createUser = /*#__PURE__*/function () {
   var _ref2 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(req, res) {
+    var _req$body, name, last_name, password, email, role, checkUser, encryptPass, userInfo, user, company, newCompany, company_id;
     return _regeneratorRuntime().wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
           console.log(req.body);
+          _req$body = req.body, name = _req$body.name, last_name = _req$body.last_name, password = _req$body.password, email = _req$body.email, role = _req$body.role;
+          _context2.next = 4;
+          return _models["default"].Users.findOne({
+            where: {
+              email: email
+            }
+          });
+        case 4:
+          checkUser = _context2.sent;
+          if (!checkUser) {
+            _context2.next = 8;
+            break;
+          }
+          res.status(400).json({
+            message: 'User Already Exists'
+          });
+          return _context2.abrupt("return", 0);
+        case 8:
+          _context2.next = 10;
+          return _User["default"].encryptPass(password);
+        case 10:
+          encryptPass = _context2.sent;
+          userInfo = {
+            name: name,
+            last_name: last_name,
+            email: email,
+            role: role,
+            password: encryptPass
+          };
+          _context2.next = 14;
+          return _models["default"].Users.create(userInfo);
+        case 14:
+          user = _context2.sent;
+          _context2.next = 17;
+          return _models["default"].user_roles.create({
+            user_id: user.dataValues.id,
+            role_id: role
+          });
+        case 17:
+          if (!(_Role["default"].EMPLOYER_ROLE === role)) {
+            _context2.next = 27;
+            break;
+          }
+          console.log('client role');
+          company = {
+            name: req.body.company.name,
+            description: req.body.company.description
+          };
+          _context2.next = 22;
+          return _models["default"].companies.create(company);
+        case 22:
+          newCompany = _context2.sent;
+          _context2.next = 25;
+          return _models["default"].companies_users.create({
+            user_id: user.dataValues.id,
+            company_id: newCompany.dataValues.id
+          });
+        case 25:
+          _context2.next = 31;
+          break;
+        case 27:
+          if (!(_Role["default"].USER_ROLE === role)) {
+            _context2.next = 31;
+            break;
+          }
+          company_id = req.body.company.id;
+          _context2.next = 31;
+          return _models["default"].employees.create({
+            user_id: user.dataValues.id,
+            company_id: company_id
+          });
+        case 31:
+          console.log(user.dataValues.id);
           res.json(req.body);
-        case 2:
+        case 33:
         case "end":
           return _context2.stop();
       }
@@ -53,3 +130,40 @@ var createUser = /*#__PURE__*/function () {
   };
 }();
 exports.createUser = createUser;
+var getEmployees = /*#__PURE__*/function () {
+  var _ref3 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3(req, res) {
+    var company, employees;
+    return _regeneratorRuntime().wrap(function _callee3$(_context3) {
+      while (1) switch (_context3.prev = _context3.next) {
+        case 0:
+          _context3.next = 2;
+          return _models["default"].companies_users.findOne({
+            where: {
+              user_id: req.userId
+            }
+          });
+        case 2:
+          company = _context3.sent;
+          _context3.next = 5;
+          return _models["default"].employees.findAll({
+            include: [{
+              model: _models["default"].Users
+            }],
+            where: {
+              company_id: company.company_id
+            }
+          });
+        case 5:
+          employees = _context3.sent;
+          res.json(employees);
+        case 7:
+        case "end":
+          return _context3.stop();
+      }
+    }, _callee3);
+  }));
+  return function getEmployees(_x5, _x6) {
+    return _ref3.apply(this, arguments);
+  };
+}();
+exports.getEmployees = getEmployees;

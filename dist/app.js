@@ -16,6 +16,7 @@ var _reports = _interopRequireDefault(require("./routes/reports.routes"));
 var _stripe2 = _interopRequireDefault(require("./routes/stripe.routes"));
 var _users = _interopRequireDefault(require("./routes/users.routes"));
 var _roles = _interopRequireDefault(require("./routes/roles.routes"));
+var _companies = _interopRequireDefault(require("./routes/companies.routes"));
 var _initialSetup = require("./libs/initialSetup");
 var _cors = _interopRequireDefault(require("cors"));
 var cronReport = _interopRequireWildcard(require("./controllers/report.cron"));
@@ -63,6 +64,7 @@ app.use('/api/auth', _auth["default"]);
 app.use('/api/reports', _reports["default"]);
 app.use('/api/users', _users["default"]);
 app.use('/api/roles', _roles["default"]);
+app.use('/api/companies', _companies["default"]);
 // cron.schedule('* * * * *', cronReport.report)
 var _default = server;
 exports["default"] = _default;

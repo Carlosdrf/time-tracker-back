@@ -13,5 +13,6 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 var router = (0, _express.Router)();
 router.post('/', _middlewares.authJwt.verifyToken, userController.getUsers);
 router.post('/create', _middlewares.authJwt.verifyToken, userController.createUser);
+router.get('/employees', _middlewares.authJwt.verifyToken, userController.getEmployees);
 var _default = router;
 exports["default"] = _default;

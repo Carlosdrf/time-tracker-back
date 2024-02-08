@@ -1,0 +1,13 @@
+version: "1"
+
+services:
+  mariadb:
+    image: mariadb
+    container_name: inimble_db
+    environment:
+      MARIADB_ROOT_PASSWORD: rivas
+      MARIADB_USER: iuser
+      MARIADB_PASSWORD: ipassword
+      MARIADB_DATABASE: i-nimble_db
+    ports:
+      - 3366:3306

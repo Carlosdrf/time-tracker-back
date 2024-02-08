@@ -1,14 +1,14 @@
 import mysql from "mysql";
 import { promisify } from 'util';
-
+require('dotenv').config()
 
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'i-nimble_db'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
 })
-
 
 pool.getConnection((err, connection) => {
   if (err) {
@@ -22,12 +22,12 @@ pool.getConnection((err, connection) => {
       console.error('Database connection was refused');
     }
     return err;
-  }else{
+  } else {
     if (connection) connection.release();
     console.log('DB is Connected');
 
     return;
-  }  
+  }
 });
 
 // Promisify Pool Querys

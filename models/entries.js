@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class time_tracker extends Model {
+  class entries extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,16 +11,18 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      entries.belongsTo(models.users, {foreignKey: 'user_id'})
     }
   }
-  time_tracker.init({
+  entries.init({
     start_time: DataTypes.DATE,
     end_time: DataTypes.DATE,
     date: DataTypes.DATE,
     status: DataTypes.INTEGER
   }, {
     sequelize,
-    modelName: 'time_tracker',
+    modelName: 'entries',
+    timestamps: false
   });
-  return time_tracker;
+  return entries;
 };

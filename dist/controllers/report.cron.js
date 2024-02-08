@@ -53,7 +53,7 @@ var UTCformat = /*#__PURE__*/function () {
     return _regeneratorRuntime().wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
-          receivedDate = new Date((0, _momentTimezone["default"])(date).format('YYYY-MM-DD'));
+          receivedDate = new Date(date);
           utc = new Date(receivedDate.getUTCFullYear(), receivedDate.getUTCMonth(), receivedDate.getDate(), 4, 0, 0);
           return _context2.abrupt("return", utc.toISOString());
         case 3:
@@ -74,9 +74,10 @@ var UTCend = /*#__PURE__*/function () {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
           receivedDate = new Date(date);
+          console.log(receivedDate);
           utc = new Date(receivedDate.getUTCFullYear(), receivedDate.getUTCMonth(), receivedDate.getDate() + 1, 3, 59, 0);
           return _context3.abrupt("return", utc.toISOString());
-        case 3:
+        case 4:
         case "end":
           return _context3.stop();
       }
@@ -108,7 +109,7 @@ var getRange = /*#__PURE__*/function () {
             end_time: end_time
           };
           console.log(dateRange);
-          if (!(req.role == 1 && req.body.user_id == null)) {
+          if (!((req.role == 1 || req.role == 3) && req.body.user_id == null)) {
             _context4.next = 16;
             break;
           }
@@ -120,7 +121,7 @@ var getRange = /*#__PURE__*/function () {
           _context4.next = 27;
           break;
         case 16:
-          if (!(req.role == 1 && req.body.user_id !== null)) {
+          if (!((req.role == 1 || req.role == 3) && req.body.user_id !== null)) {
             _context4.next = 23;
             break;
           }

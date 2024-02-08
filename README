@@ -1,0 +1,7 @@
+In order to run the app you must run 
+
+```bash
+docker compose up
+```
+
+then, import the database into the `inimble_db` container
