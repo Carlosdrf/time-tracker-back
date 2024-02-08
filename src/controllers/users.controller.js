@@ -1,72 +1,106 @@
 import usersModel from "../models/User";
 const { Op } = require('sequelize');
-
-import * as format from "../services/utc.format";
 import db, { sequelize } from "../../models";
 import roleModel from "../models/Role";
-import { where } from "sequelize";
 
+export const handleFilter = (items, filter) => {
+  let searchBy = []
+  let filterBy = []
+  let result = {};
+  items.forEach(item => {
+    if (item !== '')
+      searchBy.push(
+        {
+          name: {
+            [Op.like]: `%${item}%`
+          }
+        },
+        {
+          last_name: {
+            [Op.like]: `%${item}%`
+          }
+        }
+      )
+  });
+  if (searchBy.length > 0) result[Op.or] = searchBy
+  if (filter) {
+    filterBy = [sequelize.literal("`user_roles->role`.`id` = " + filter)]
+    result[Op.and] = filterBy
+  }
+  return result;
+}
 export const getUsers = async (req, res) => {
+  const { searchField, filter } = req.body
   // const token = await genNewToken(req)
-  console.log(req.body)
-  const result = await usersModel.getUsersList(req.body.searchField);
+  const searchQuery = handleFilter(searchField.split(' '), filter)
 
-  const querySearch = req.body.searchField !== '' ?
-    {
-      [Op.or]: [
-        [{ name: { [Op.like]: `%${req.body.searchField}%` } }],
-        [{ last_name: { [Op.like]: `%${req.body.searchField}%` } }]
-      ]
-    }
-    : {}
-  req.body.filter = 'filter'
-  const queryFilter = req.body.filter !== '' ?
-    {
-      [Op.and]: [
-        [{ name: req.body.filter }]
-      ]
-    } : {}
-  console.log(queryFilter)
-  const seq = await db.users.findAll({
+  let users = await db.users.findAll({
     include: [
       {
-        model: db.user_roles, required: false,
-        // attributes: [],
-        include: [{
+        model: db.user_roles,
+        required: false,
+        attributes: [],
+        include: {
           model: db.roles,
+          attributes: [],
           required: false,
-          attributes: ['id', 'name']
-        }],
+        }
+      }, {
+        model: db.companies_users,
+        required: false,
+        attributes: [],
+        include: {
+          model: db.companies,
+          attributes: [],
+          required: false
+        }
       },
       {
-        model: db.companies_users, required: false,
-        // attributes: [],
-        include: [{
+        model: db.employees,
+        required: false,
+        // attributes: ['id'],
+        include: {
           model: db.companies,
-          required: false,
-          attributes: ['id', 'name', 'description']
-        }],
+          required: false
+        }
       }
     ],
-    where: querySearch,
+    where: searchQuery,
+    order: ['name'],
+    raw: true,
     attributes: {
       exclude: ['password'],
+      include: [
+        [sequelize.literal('`user_roles->role`.`id`'), 'role'],
+        [sequelize.literal('`companies_users->company`.`id`'), 'company_id'],
+        [sequelize.literal('`companies_users->company`.`name`'), 'company_name'],
+        [sequelize.literal('`companies_users->company`.`description`'), 'company_description']
+      ],
     }
   })
-  const sample = seq.map(item => {
-    // item.dataValues.role = 'string'
-    // console.log(item.dataValues)
-    item.dataValues.user_roles.forEach(user_role=>{
-      console.log(user_role.dataValues.role.dataValues.id)
-      item.dataValues.role = user_role.dataValues.role.dataValues.id
-      item.dataValues.role_name = user_role.dataValues.role.dataValues.name
-      // user_role.dataValues.role.map(roles=>{
-      //   console.log(roles.dataValues)
-      // })
-    })
-    return item
+  const usersFormatted = users.map((user) => {
+    let userFormat = {}
+    userFormat.id = user.id
+    userFormat.name = user.name
+    userFormat.last_name = user.last_name
+    userFormat.role = user.role
+    if (user.company_id) {
+      userFormat.company = {
+        id: user.company_id,
+        name: user.company_name,
+        description: user.company_description
+      }
+    }
+    if (user['employees.id']) {
+      userFormat.employee = {
+        id: user['employees.company.id'],
+        company: user['employees.company.name']
+      }
+    }
+    return userFormat
   })
-  res.json(sample);
+
+  res.json(usersFormatted);
 };
 
 export const createUser = async (req, res) => {
