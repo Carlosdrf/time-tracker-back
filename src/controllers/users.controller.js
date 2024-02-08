@@ -83,6 +83,7 @@ export const getUsers = async (req, res) => {
     userFormat.id = user.id
     userFormat.name = user.name
     userFormat.last_name = user.last_name
+    userFormat.email = user.email
     userFormat.role = user.role
     if (user.company_id) {
       userFormat.company = {
