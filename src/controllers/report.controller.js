@@ -55,9 +55,9 @@ export const getRange = async (req, res) => {
       where: { start_time: { [Op.between]: [start_time, end_time] } },
     });
     let users_entries;
-    users_entries = entries.map((entry) => {
+    users_entries = entries.map((entry, i) => {
       let employee = employees.find(employee => entry.user_id === employee.user_id)
-      entry[xd] = employee
+      entry[i] = employee
       return entry
     });
     res.json(users_entries);
@@ -67,7 +67,6 @@ export const getRange = async (req, res) => {
   }
 };
 export const getReport = async (req, res) => {
-  console.log(req.body);
   const end_time = new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
   const start_time = new Date(req.body.firstSelect)
   const dateRange = {
@@ -115,7 +114,8 @@ export const getReport = async (req, res) => {
     row = await models.getReport(dateRange, req.body.user_id);
   } else {
     console.log("client call");
-    row = await models.getReport(dateRange, req.userId);
+    console.log(req.body);
+    row = await models.getReport(dateRange, req.body.user_id);
   }
 
   // nombres columnas

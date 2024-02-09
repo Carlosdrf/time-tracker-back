@@ -106,27 +106,62 @@ export const getUsers = async (req, res) => {
 
 export const createUser = async (req, res) => {
   console.log(req.body);
-  const { name, last_name, password, email, role } = req.body;
-
-  const checkUser = await db.users.findOne({ where: { email } });
-  if (checkUser) {
-    res.status(400).json({ message: "User Already Exists" });
-    return 0;
+  const { id, name, last_name, password, email, role, company, employee } = req.body;
+  if (id == "-1") {
+    const checkUser = await db.users.findOne({ where: { email } });
+    if (checkUser) {
+      res.status(400).json({ message: "User Already Exists" });
+      return 0;
+    }
   }
-  const encryptPass = await usersModel.encryptPass(password);
-
   let userInfo = {
     name,
     last_name,
     email,
     role,
-    password: encryptPass,
   };
-  const user = await db.users.create(userInfo);
-  await db.user_roles.create({ user_id: user.dataValues.id, role_id: role });
-  if (roleModel.EMPLOYER_ROLE === role) {
-    console.log("client role");
+  let encryptPass = '';
+  if (password) {
+    encryptPass = await usersModel.encryptPass(password);
+  }
+  if (encryptPass !== '') userInfo.password = encryptPass
 
+  if (id !== '-1') {
+    await db.users.update(userInfo, { where: { id: id } })
+    await db.user_roles.update({ role_id: role }, { where: { user_id: id } })
+    if (roleModel.EMPLOYER_ROLE == role) {
+      const checkCompany = await db.companies_users.findAll({ where: { user_id: id } })
+      if (checkCompany.length > 0) await db.companies.update({ name: company.name, description: company.description }, { where: { id: company.id } })
+      else {
+        const newCompany = await db.companies.create({ name: company.name, description: company.description })
+        await db.companies_users.create({ user_id: id, company_id: newCompany.dataValues.id })
+      }
+      await db.employees.destroy({ where: { user_id: id } })
+    }
+    if (roleModel.USER_ROLE == role) {
+      if (employee.id != '') {
+        const checkEmployee = await db.employees.findAll({ where: { user_id: id } })
+        if (checkEmployee.length > 0) await db.employees.update({ company_id: employee.id }, { where: { user_id: id } })
+        else await db.employees.create({ user_id: id, company_id: employee.id })
+      }
+      await db.companies_users.destroy({ where: { user_id: id } })
+    }
+    userInfo.id = id
+  } else {
+    userInfo = await createNewUser(req, userInfo)
+
+  }
+  userInfo.company = company
+  userInfo.employee = employee
+  userInfo.password = ''
+
+  res.json(userInfo);
+};
+
+export const createNewUser = async (req, userInfo) => {
+  const user = await db.users.create(userInfo);
+  await db.user_roles.create({ user_id: user.dataValues.id, role_id: userInfo.role });
+  if (roleModel.EMPLOYER_ROLE == userInfo.role) {
     let company = {
       name: req.body.company.name,
       description: req.body.company.description,
@@ -136,15 +171,14 @@ export const createUser = async (req, res) => {
       user_id: user.dataValues.id,
       company_id: newCompany.dataValues.id,
     });
-  } else if (roleModel.USER_ROLE === role) {
-    let company_id = req.body.company.id;
+  } else if (roleModel.USER_ROLE == userInfo.role && req.body.employee.id) {
+    let company_id = req.body.employee.id;
     await db.employees.create({ user_id: user.dataValues.id, company_id });
   }
+  userInfo.id = user.dataValues.id
+  return userInfo;
+}
 
-  console.log(user.dataValues.id);
-
-  res.json(req.body);
-};
 
 export const getEmployees = async (req, res) => {
   const company = await db.companies_users.findOne({

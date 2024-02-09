@@ -7,8 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.js --exec babel-node",
-    "build": "babel src --out-dir dist",
-    "sequelize": "npx sequelize-cli init"
+    "build": "babel src --out-dir dist"
   },
   "keywords": [],
   "author": "",
