@@ -5,3 +5,6 @@ docker compose up
 ```
 
 then, import the database into the `inimble_db` container
+
+to start the app in local environment for development run
+# npm run dev
