@@ -7,6 +7,6 @@ router.get('/', authJwt.verifyToken, stripeController.getPayments)
 
 router.post('/checkout', authJwt.verifyToken, stripeController.paymentIntent)
 
-router.post('/webhook', authJwt.verifyToken, stripeController.stripeWebhook)
+router.post('/webhook', stripeController.stripeWebhook)
 
 export default router

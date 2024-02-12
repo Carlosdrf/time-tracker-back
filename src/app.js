@@ -13,8 +13,12 @@ import companyRoute from "./routes/companies.routes";
 import { createRoles, insertRoles } from "./libs/initialSetup";
 import cors from "cors";
 import * as cronReport from "./controllers/report.controller";
-const stripe = Stripe("sk_test_4eC39HqLyjWDarjtT1zdp7dc");
+// const options = {
+//   key: fs.readFileSync('certificate.key'),
+//   cert: fs.readFileSync('certificate.crt'),
+// }
 const cron = require("node-cron");
+
 // const {run: cronReport} = require('./controllers/report.controller')
 // const stripe =
 const app = express();
