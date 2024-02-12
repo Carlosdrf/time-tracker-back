@@ -13,4 +13,6 @@ router.get('/employees', authJwt.verifyToken, userController.getEmployees)
 
 router.post('/verifyusername', authJwt.verifyToken, userController.verifyUsername)
 
+router.delete('/:id', authJwt.verifyToken, userController.deleteUser)
+
 export default router;

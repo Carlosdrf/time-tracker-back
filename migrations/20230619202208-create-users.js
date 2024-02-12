@@ -31,6 +31,11 @@ module.exports = {
       last_active: {
         type: Sequelize.DATE,
         allowNull: true
+      },
+      active: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
       }
     });
   },

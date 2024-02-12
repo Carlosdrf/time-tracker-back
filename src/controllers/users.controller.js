@@ -2,6 +2,7 @@ import usersModel from "../models/User";
 const { Op } = require('sequelize');
 import db, { sequelize } from "../../models";
 import roleModel from "../models/Role";
+import fetch from "node-fetch";
 
 export const handleFilter = (items, filter) => {
   let searchBy = []
@@ -179,7 +180,6 @@ export const createNewUser = async (req, userInfo) => {
   return userInfo;
 }
 
-
 export const getEmployees = async (req, res) => {
   const company = await db.companies_users.findOne({
     where: { user_id: req.userId },
@@ -202,3 +202,9 @@ export const verifyUsername = async (req, res) => {
     return res.status(300).json({ message: "that user is taken" });
   res.status(200).json({ message: "you can use the username" });
 };
+
+export const deleteUser = async (req, res) => {
+  console.log(req.params)
+  await db.users.destroy({ where: { id: req.params.id } })
+  res.json({ message: "User Deleted Successfully" })
+}
