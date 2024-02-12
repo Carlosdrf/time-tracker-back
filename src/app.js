@@ -50,8 +50,9 @@ io.on("connection", (socket) => {
 // createRoles();
 // insertRoles();
 app.use(cors());
+
 app.use(morgan("dev"));
-app.use(express.json());
+app.use(express.json({verify: (req,res,buf) => { req.rawBody = buf }}));
 app.use("/api/stripe", stripeRoute);
 app.use("/api/entries", entriesR);
 app.use("/api/auth", authRoute);

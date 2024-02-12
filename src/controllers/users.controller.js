@@ -205,5 +205,6 @@ export const verifyUsername = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   console.log(req.params)
-  res.json('mensaje')
+  await db.users.destroy({ where: { id: req.params.id } })
+  res.json({ message: "User Deleted Successfully" })
 }
