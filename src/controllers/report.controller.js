@@ -1,14 +1,11 @@
 import fetch from "node-fetch";
-import models from "../models/Report";
 import moment from "moment-timezone";
 import * as format from "../services/utc.format";
-import db from "../../models";
+import db, { sequelize } from "../../models";
 const Op = require("../../models").Sequelize.Op;
 import * as roleModel from "../models/Role";
-// import e from "express";
 
 import fs from "fs";
-import { where } from "sequelize";
 const excel = require("excel4node");
 const path = require("path");
 
@@ -27,21 +24,36 @@ export const report = async function cronReport() {
 export const getRange = async (req, res) => {
   const end_time = await format.UTCend(req.body.lastSelect);
   const start_time = await format.UTCStart(req.body.firstSelect);
-  console.log('RANGE REPORT FUNCTION')
   const dateRange = {
     start_time: new Date(req.body.firstSelect),
     end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
   };
-  console.log(dateRange)
-  // return;
   if (req.role == roleModel.ADMIN_ROLE && req.body.user_id == null) {
-    const row = await models.getReport(dateRange);
+    const row = await db.entries.findAll({
+      where: { status: 1, start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] } },
+    })
     res.json(row);
   } else if (
     (req.role == roleModel.ADMIN_ROLE || req.role == roleModel.EMPLOYER_ROLE) &&
     req.body.user_id != null
   ) {
-    const row = await models.getReport(dateRange, req.body.user_id);
+    let row;
+    console.log('client/admin with a user id provided')
+    const where = { status: 1, user_id: req.body.user_id, start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] } }
+    if (req.body.role == 3) {
+      // if there's a role received from the front end and the role is equal to employer type it will look for their employees
+      const { company_id } = await db.companies_users.findOne({ where: { user_id: req.body.user_id } })
+      const employees = await db.employees.findAll({ where: { company_id: company_id } })
+      const ids = employees.map((employee, i) => employee.user_id);
+      row = await db.entries.findAll({
+        where: { user_id: ids, status: 1 },
+        start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+      })
+    } else {
+      row = await db.entries.findAll({
+        where: where,
+      })
+    }
     res.json(row);
   } else if (req.role == roleModel.EMPLOYER_ROLE && req.body.user_id == null) {
     const companies = await db.companies_users.findOne({
@@ -50,34 +62,164 @@ export const getRange = async (req, res) => {
     const employees = await db.employees.findAll({
       where: { company_id: companies.id },
     });
-    console.log("employees: ", employees);
+    let users_id = []
+    employees.forEach((item, i) => {
+      users_id[i] = item.dataValues.user_id
+    });
     const entries = await db.entries.findAll({
-      where: { start_time: { [Op.between]: [start_time, end_time] } },
+      where: { start_time: { [Op.between]: [start_time, end_time] }, user_id: users_id },
     });
-    let users_entries;
-    users_entries = entries.map((entry, i) => {
-      let employee = employees.find(employee => entry.user_id === employee.user_id)
-      entry[i] = employee
-      return entry
-    });
-    res.json(users_entries);
+    res.json(entries);
   } else {
-    const row = await models.getReport(dateRange, req.userId);
+    const row = await db.entries.findAll({ where: { user_id: req.userId, start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] } } });
     res.json(row);
   }
 };
 export const getReport = async (req, res) => {
-  const end_time = new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
-  const start_time = new Date(req.body.firstSelect)
+  const end_time = await format.UTCend(req.body.lastSelect);
+  const start_time = await format.UTCStart(req.body.firstSelect);
   const dateRange = {
-    start_time,
-    end_time
+    start_time: new Date(req.body.firstSelect),
+    end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
   };
 
   const workbook = new excel.Workbook();
   let nombreArchivo = "report i-nimble";
 
   var worksheet = workbook.addWorksheet(nombreArchivo);
+
+  let row;
+  if (req.role == 1 && req.body.user_id == null) {
+    console.log('admin and no user id provided')
+    row = await db.entries.findAll({
+      where: {
+        start_time: { [Op.between]: [start_time, end_time] },
+        status: 1
+      },
+      include: [{
+        model: db.users,
+        attributes: []
+      },
+      {
+        model: db.tasks,
+        required: false,
+        attributes: []
+      }],
+      raw: true,
+      attributes: {
+        include: [
+          [sequelize.literal('user.name'), 'name'],
+          [sequelize.literal('user.last_name'), 'last_name'],
+          [sequelize.literal('user.email'), 'email'],
+          [sequelize.literal('task.description'), 'description']
+        ]
+      },
+      order: [[sequelize.literal('user.name')], [sequelize.literal('user.last_name')], ['start_time', 'desc']]
+    })
+  } else if (req.role != 2 && req.body.user_id != null) {
+    console.log('admin/client and user id provided')
+    let where = {
+      start_time: { [Op.between]: [start_time, end_time] },
+      status: 1
+    }
+
+    if (req.body.role == 3) {
+      const { company_id } = await db.companies_users.findOne({ where: { user_id: req.body.user_id } })
+      const employees = await db.employees.findAll({ where: { company_id: company_id } })
+      const ids = employees.map((employee, i) => employee.user_id);
+      where.user_id = ids
+    } else {
+      where.user_id = req.body.user_id
+    }
+    row = await await db.entries.findAll({
+      where: where,
+      include: [{
+        model: db.users,
+        attributes: []
+      },
+      {
+        model: db.tasks,
+        required: false,
+        attributes: []
+      }],
+      raw: true,
+      attributes: {
+        include: [
+          [sequelize.literal('user.name'), 'name'],
+          [sequelize.literal('user.last_name'), 'last_name'],
+          [sequelize.literal('user.email'), 'email'],
+          [sequelize.literal('task.description'), 'description']
+        ]
+      },
+      order: [[sequelize.literal('user.name')], ['start_time', 'desc']]
+    })
+
+  } else if (req.role == roleModel.EMPLOYER_ROLE && req.body.user_id == null) {
+    console.log("client call");
+    // row = await models.getReport(dateRange, req.body.user_id);
+    const company = await db.companies_users.findOne({ where: { user_id: req.userId } })
+    const employees = await db.employees.findAll({ where: { company_id: company.id } })
+    let ids = []
+    employees.forEach((element, i) => {
+      ids[i] = element.user_id
+    });
+    row = await db.entries.findAll({
+      where: {
+        user_id: ids,
+        start_time: { [Op.between]: [start_time, end_time] },
+        status: 1
+      },
+      include: [{
+        model: db.users,
+        attributes: []
+      },
+      {
+        model: db.tasks,
+        required: false,
+        attributes: []
+      }],
+      raw: true,
+      attributes: {
+        include: [
+          [sequelize.literal('user.name'), 'name'],
+          [sequelize.literal('user.last_name'), 'last_name'],
+          [sequelize.literal('user.email'), 'email'],
+          [sequelize.literal('task.description'), 'description']
+        ]
+      },
+      order: [[sequelize.literal('user.name')], [sequelize.literal('user.last_name')], ['start_time', 'desc']]
+    })
+  } else {
+    console.log("user call");
+    // row = await models.getReport(dateRange, req.body.user_id);
+    row = await db.entries.findAll({
+      where: {
+        user_id: req.userId,
+        start_time: { [Op.between]: [start_time, end_time] },
+        status: 1
+      },
+      include: [{
+        model: db.users,
+        attributes: []
+      },
+      {
+        model: db.tasks,
+        required: false,
+        attributes: []
+      }],
+      raw: true,
+      attributes: {
+        include: [
+          [sequelize.literal('user.name'), 'name'],
+          [sequelize.literal('user.last_name'), 'last_name'],
+          [sequelize.literal('user.email'), 'email'],
+          [sequelize.literal('task.description'), 'description']
+        ]
+      },
+      order: [[sequelize.literal('user.name')], ['start_time', 'desc']]
+    })
+  }
+
   // estilos
   var hdColumnStyle = workbook.createStyle({
     font: {
@@ -98,7 +240,6 @@ export const getReport = async (req, res) => {
       name: "Arial",
       color: "#000000",
       size: 11,
-      // bold: true,
     },
     border: {
       right: {
@@ -107,78 +248,67 @@ export const getReport = async (req, res) => {
       },
     },
   });
-  let row;
-  if (req.role == 1 && req.body.user_id == null) {
-    row = await models.getReport(dateRange);
-  } else if (req.role == 1 && req.body.user_id !== null) {
-    row = await models.getReport(dateRange, req.body.user_id);
-  } else {
-    console.log("client call");
-    console.log(req.body);
-    row = await models.getReport(dateRange, req.body.user_id);
-  }
-
   // nombres columnas
-  worksheet.cell(1, 1).string("User").style(hdColumnStyle);
-  // worksheet.cell(1,2).string('Apellido').style(hdColumnStyle)
-  worksheet.cell(1, 3).string("Date").style(hdColumnStyle);
-  worksheet.cell(1, 4).string("Start time").style(hdColumnStyle);
-  worksheet.cell(1, 5).string("End time").style(hdColumnStyle);
-  worksheet.cell(1, 6).string("Total Hours").style(hdColumnStyle);
-  worksheet.cell(1, 7).string("Comments").style(hdColumnStyle);
-  // worksheet.cell(2, 1).string(row[0].name + ' ' + row[0].last_name).style(contColumnStyle)
+  worksheet.cell(1, 1).string("User").style({
+    font: {
+      name: "Arial",
+      color: "#000000",
+      size: 12,
+      bold: true,
+    },
+  });
+  worksheet.cell(1, 2).style(hdColumnStyle);
+  worksheet.cell(1, 3).string("Day").style(hdColumnStyle);
+  worksheet.cell(1, 4).string("Date").style(hdColumnStyle);
+  worksheet.cell(1, 5).string("Clock in").style(hdColumnStyle);
+  worksheet.cell(1, 6).string("Clock out").style(hdColumnStyle);
+  worksheet.cell(1, 7).string("Total Hours").style(hdColumnStyle);
+  worksheet.cell(1, 8).string("Comments").style(hdColumnStyle);
 
   let i = 2;
-  let name;
   row.forEach((element) => {
-    // worksheet.cell(i, 1).string(element.name).style(contColumnStyle)
-    // worksheet.cell(i, 2).string(element.last_name).style(contColumnStyle)
-    // worksheet.cell(i, 1).string(element.name+' '+element.last_name).style(contColumnStyle)
-    if (name) {
-      if (name !== element.name) {
-        worksheet
-          .cell(i, 1)
-          .string(element.name + " " + element.last_name)
-          .style(contColumnStyle);
-      }
-    } else {
-      worksheet
-        .cell(i, 1)
-        .string(element.name + " " + element.last_name)
-        .style(contColumnStyle);
-    }
-    const test = moment
-      .tz(element.start_time, "America/Caracas")
-      .format("HH:mm:ss");
-    console.log(test);
+    worksheet.cell(i, 1).string(element.name + " " + element.last_name).style({
+      font: {
+        name: "Arial",
+        color: "#000000",
+        size: 11,
+      },
+    })
+    worksheet.cell(i, 2).style(contColumnStyle)
+
     worksheet
-      .cell(i, 2)
+      .cell(i, 3)
       .string(moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('dddd'))
       .style(contColumnStyle);
     worksheet
-      .cell(i, 3)
+      .cell(i, 4)
       .string(
         moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('YYYY-MM-DD')
       )
       .style(contColumnStyle);
     worksheet
-      .cell(i, 4)
+      .cell(i, 5)
       .string(
         moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('HH:mm:ss')
       )
       .style(contColumnStyle);
     worksheet
-      .cell(i, 5)
+      .cell(i, 6)
       .string(moment(new Date(element.end_time)).utcOffset(-req.body.timezone).format('HH:mm:ss'))
       .style(contColumnStyle);
     worksheet
-      .cell(i, 6)
+      .cell(i, 7)
       .string(getTotalHours(element.start_time, element.end_time))
       .style(contColumnStyle);
-    worksheet.cell(i, 7).string(element.description).style(contColumnStyle);
-    // console.log(element.name)
-    name = element.name;
-    i = i + 1;
+    worksheet.cell(i, 8).string(element.description).style({
+      font: {
+        name: "Arial",
+        color: "#000000",
+        size: 12,
+        bold: true,
+      },
+    });
+    i++;
   });
   // ruta donde se guardara
   const xlPath = path.join(__dirname, "../../excel", nombreArchivo + ".xlsx");
@@ -189,7 +319,6 @@ export const getReport = async (req, res) => {
     } else {
       // function downloadFile(){res.download(xlPath)}
       // downloadFile()
-      // console.log('archivo descargado')
       // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       // res.setHeader('Content-Disposition', 'attachment; filename='+ nombreArchivo +'.xlsx');
       // res.setHeader('Content-Length', status.length);

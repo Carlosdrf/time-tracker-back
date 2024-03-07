@@ -140,8 +140,6 @@ export const paymentIntent = async (req, res) => {
 
 }
 export const getPayments = async (req, res) => {
-    const { user_id } = req.body
-    console.log(user_id)
     const payments = await db.payments.findAll({
         include: [
             { model: db.status },
