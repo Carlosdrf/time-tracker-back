@@ -2,7 +2,6 @@ import usersModel from "../models/User";
 const { Op } = require('sequelize');
 import db, { sequelize } from "../../models";
 import roleModel from "../models/Role";
-import fetch from "node-fetch";
 
 export const handleFilter = (items, filter) => {
   let searchBy = []
@@ -26,14 +25,16 @@ export const handleFilter = (items, filter) => {
   if (searchBy.length > 0) result[Op.or] = searchBy
   if (filter) {
     filterBy = [sequelize.literal("`user_roles->role`.`id` = " + filter)]
-    result[Op.and] = filterBy
   }
+  const filterExclude = [sequelize.literal("`user_roles->role`.`id` <> 1")]
+  result[Op.and] = [...filterBy, ...filterExclude]
   return result;
 }
 export const getUsers = async (req, res) => {
   const { searchField, filter } = req.body
   // const token = await genNewToken(req)
-  const searchQuery = handleFilter(searchField.split(' '), filter)
+  let searchQuery;
+  if (searchField != null) searchQuery = handleFilter(searchField.split(' '), filter)
 
   let users = await db.users.findAll({
     include: [
@@ -59,7 +60,6 @@ export const getUsers = async (req, res) => {
       {
         model: db.employees,
         required: false,
-        // attributes: ['id'],
         include: {
           model: db.companies,
           required: false
@@ -75,9 +75,15 @@ export const getUsers = async (req, res) => {
         [sequelize.literal('`user_roles->role`.`id`'), 'role'],
         [sequelize.literal('`companies_users->company`.`id`'), 'company_id'],
         [sequelize.literal('`companies_users->company`.`name`'), 'company_name'],
-        [sequelize.literal('`companies_users->company`.`description`'), 'company_description']
+        [sequelize.literal('`companies_users->company`.`description`'), 'company_description'],
+
       ],
     }
+  })
+  let entriesReview = await db.entries.findAll({ where: sequelize.literal("TIMEDIFF(end_time, start_time) >= '10:00:00'") });
+  let usersForReview = []
+  entriesReview.forEach(reviewUser => {
+    usersForReview.push(reviewUser.user_id)
   })
   const usersFormatted = users.map((user) => {
     let userFormat = {}
@@ -86,6 +92,10 @@ export const getUsers = async (req, res) => {
     userFormat.last_name = user.last_name
     userFormat.email = user.email
     userFormat.role = user.role
+    if (usersForReview.indexOf(user.id) != -1) {
+      userFormat.review = entriesReview.filter((entry) => user.id == entry.user_id)
+    }
+    userFormat.active = user.active
     if (user.company_id) {
       userFormat.company = {
         id: user.company_id,
@@ -207,4 +217,9 @@ export const deleteUser = async (req, res) => {
   console.log(req.params)
   await db.users.destroy({ where: { id: req.params.id } })
   res.json({ message: "User Deleted Successfully" })
+}
+
+export const updateUser = async (req, res) => {
+  await db.users.update(req.body, { where: { id: req.params.id } })
+  res.json(req.body)
 }

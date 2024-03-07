@@ -7,6 +7,8 @@ import moment from 'moment';
 import jwt from "jsonwebtoken";
 import config from '../config'
 import { io } from "../app";
+import db, { sequelize } from '../../models'
+import { Op } from "sequelize";
 
 
 export const genNewToken = async (req) => {
@@ -27,66 +29,75 @@ export const genNewToken = async (req) => {
 }
 
 export const getEntries = async (req, res) => {
-    const token = await genNewToken(req)
-    let result
-    if (req.role == 1) {
-        result = await usersModel.getAllEntries()
-    } else {
-        result = await models.getEntries(req.userId)
+    // const token = await genNewToken(req)
+    // const { user_id } = req.body
+    const user_id = req.body.user_id ? req.body.user_id : req.userId
+    let where = [];
+    if (req.body.start_time) {
+        const start_time = new Date(req.body.start_time)
+        const end_time = new Date(new Date(req.body.end_time).setHours(23, 59, 59))
+        where.push({ start_time: { [Op.between]: [start_time, end_time] } })
     }
-    res.status(200).json({ result, token })
-}
-
-export const getAllEntries = async (req, res) => {
-    const dateRange = {
-        start_time: new Date(req.body.start_time),
-        end_time: new Date(new Date(req.body.end_time).setHours(23, 59, 59))
-    }
-
-    const result = await models.getAllEntries(dateRange)
-    res.json(result)
-}
-// users entries
-export const getUsersEntries = async (req, res) => {
-    const user_id = req.body.user_id
-    let result
-    if (req.body.start_time == null) {
-        result = await models.getEntries(user_id)
-    } else {
-        const dateRange = {
-            start_time: await format.UTCStart(req.body.start_time),
-            end_time: await format.UTCend(req.body.end_time)
-        }
-        result = await reportModel.getReport(dateRange, user_id)
-    }
-    res.json(result)
+    where.push({ user_id: user_id })
+    where.push({ [Op.and]: sequelize.literal('(TIMEDIFF(end_time, start_time) < "10:00:00")') })
+    let result = await db.entries.findAll({
+        order: [["id", "DESC"]],
+        include: {
+            model: db.tasks,
+            attributes: []
+        },
+        raw: true,
+        attributes: {
+            include: [[sequelize.literal('task.description'), 'description']]
+        },
+        where: where
+    })
+    let suspicious = await db.entries.findAll({
+        where: sequelize.literal(`TIMEDIFF(end_time, start_time) >= '10:00:00' AND user_id=${user_id}`),
+        order: [['start_time', 'desc']]
+    })
+    res.status(200).json({ entries: result, suspicious })
 }
 
 export const getStartedEntry = async (req, res) => {
-    const startedEntry = await models.getStartedEntry(req.userId)
-    io.emit('server:message', startedEntry);
+    const startedEntry = await db.entries.findOne({ where: { user_id: req.userId, status: 0 } })
+    // io.emit('server:message', startedEntry);
     res.json(startedEntry);
 }
 
 export const createEntry = async (req, res) => {
     const date = moment().format('YYYY-MM-DD')
     const { start_time, status } = req.body
-
-    const taskId = await models.createTask(req.body.task)
+    const task = {
+        description: req.body.description
+    }
+    console.log(req.body.description)
+    const newTask = await db.tasks.create(task)
     const data = {
-        start_time: new Date(start_time),
-        end_time: new Date(start_time),
+        start_time: new Date(),
+        end_time: new Date(),
         date,
         user_id: req.userId,
         status,
-        task_id: taskId.insertId
+        task_id: newTask.id
     }
-    const result = await models.createEntry(data)
+    const result = await db.entries.create(data)
+
     if (result) {
-        io.emit('server:message', result.insertId)
+        const startedEntry = await db.entries.findOne({
+            where: { user_id: req.userId, status: 0 },
+            include: {
+                model: db.tasks,
+                required: false,
+                attributes: []
+            },
+            attributes: {
+                include: [[sequelize.literal('task.description'), 'description']]
+            }
+        })
+        io.emit('server:message', result)
         io.emit('server:admin:newEntry')
-        // io.emit('server:admin:newEntry', [req.userId, data])
-        res.json(result.insertId)
+        res.json(startedEntry)
     } else {
         res.json('There was a Trouble')
     }
@@ -94,12 +105,13 @@ export const createEntry = async (req, res) => {
 
 export const closeEntry = async (req, res) => {
 
-    let entryData = ({
-        end_time: moment().format('YYYY-MM-DD HH:mm:ss'),
+    let entryData = {
+        end_time: new Date(moment().format('YYYY-MM-DD HH:mm:ss')),
         status: 1,
-    })
-    const result = await models.closeCurrentEntry(req.params.entryId, entryData, req.userId)
+    }
 
+    const result = await db.entries.update(entryData, { where: { id: req.params.entryId, status: 0 } })
+    await db.tasks.update({description: req.body.description}, {where: {id: req.body.task_id}})
     if (result) {
         // io.emit('server:closedEntry', [req.userId, entryData])
         io.emit('server:closedEntry')
@@ -124,11 +136,11 @@ export const updateEntryById = async (req, res) => {
     await models.updateTask(taskData)
 
     const entryData = ({
-        start_time: moment(date).format('YYYY-MM-DD') + ' ' + moment(start_time).format('HH:mm:ss'),
-        end_time: moment(date).format('YYYY-MM-DD') + ' ' + moment(end_time).format('HH:mm:ss'),
-        date: moment(date).format('YYYY-MM-DD'),
+        start_time: new Date(start_time),
+        end_time: new Date(end_time),
+        date: new Date(date),
     })
-    const result = await models.updateEntryById(req.params.entryId, entryData)
+    const result = await db.entries.update(entryData, { where: { id: req.params.entryId } })
     if (result) {
         res.status(200).json({ message: 'Updated' })
     } else {
@@ -136,21 +148,24 @@ export const updateEntryById = async (req, res) => {
     }
 }
 export const updateTaskById = async (req, res) => {
-    const { description } = req.body
-    console.log(description, req.params.task_id)
+    const { description, id } = req.body
     const taskData = ({
-        id: req.params.task_id,
-        description
+        description: description == null ? '' : description
     })
-    const updated = await models.updateTask(taskData)
-    console.log(updated)
-    if (updated) {
-        res.status(200).json({ message: 'Task Updated' })
+    console.log(req.body.task_id)
+    const updated = req.body.task_id != null ? await db.tasks.update(taskData, { where: { id: req.params.task_id } }) : await db.tasks.create(taskData)
+
+    if (updated == 1 || updated.dataValues) {
+        res.status(200).json({ message: 'Task Updated successfully' })
+    } else if (updated == 0) {
+        res.status(201).json({ message: 'No changes detected' })
     } else {
-        res.status(400).json({ message: "there whas an error" })
+        res.status(400).json({ message: "There was an error" })
+    }
+    if (updated.dataValues) {
+        await db.entries.update({ task_id: updated.dataValues.id }, { where: { id: id } })
     }
 }
-
 
 export const deleteProductById = async (req, res) => {
     const result = await models.deleteById(req.params.entryId)
@@ -159,4 +174,16 @@ export const deleteProductById = async (req, res) => {
     } else {
         res.json('error')
     }
+}
+
+export const getEntryForReview = async (req, res) => {
+    const { id } = req.body
+    let where = "TIMEDIFF(end_time, start_time) >= 10:00:00)"
+    if (id) {
+        where = "TIMEDIFF(end_time, start_time) >= 10:00:00) AND user_id =".id
+    }
+    const reviewEntry = db.entries.findAll({
+        where: sequelize.literal(where)
+    })
+    res.json(reviewEntry)
 }

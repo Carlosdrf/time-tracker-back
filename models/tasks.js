@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      tasks.hasOne(models.entries, {foreignKey: 'task_id'})
     }
   }
   tasks.init({
@@ -18,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'tasks',
+    timestamps: false
   });
   return tasks;
 };

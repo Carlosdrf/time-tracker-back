@@ -1,6 +1,5 @@
 import express from "express";
 import { Server as webSocketServer } from "socket.io";
-import { Stripe } from "stripe";
 import http from "http";
 import morgan from "morgan";
 import entriesR from "./routes/entries.routes";
@@ -13,7 +12,6 @@ import companyRoute from "./routes/companies.routes";
 import timezoneRoute from './routes/timezone.routes';
 import { createRoles, insertRoles } from "./libs/initialSetup";
 import cors from "cors";
-import * as cronReport from "./controllers/report.controller";
 // const options = {
 //   key: fs.readFileSync('certificate.key'),
 //   cert: fs.readFileSync('certificate.crt'),
@@ -21,38 +19,19 @@ import * as cronReport from "./controllers/report.controller";
 const cron = require("node-cron");
 
 // const {run: cronReport} = require('./controllers/report.controller')
-// const stripe =
 const app = express();
 const server = http.createServer(app);
 export const io = new webSocketServer(server, { cors: true, origins: ["*"] });
 
-var userID;
-
-io.on("connection", (socket) => {
-  console.log("listening web socket");
-  socket.on("client:joinRoom", (email) => {
-    socket.join(email);
-    userID = email;
-    console.log("just joined, welcome ", email);
-  });
-  socket.on("client:timer", (data) => {
-    console.log(userID);
-    socket.broadcast.to(userID).emit("server:timer", data);
-  });
-  socket.on("client:loadEntries", (data) => {
-    socket.broadcast.to(userID).emit("server:getEntries", data);
-  });
-  socket.on("client:closedEntry", (data) => {
-    console.log("hello");
-  });
-});
+// exec socket.js functions
+require('./socket')(io);
 
 // createRoles();
 // insertRoles();
 app.use(cors());
 
 app.use(morgan("dev"));
-app.use(express.json({verify: (req,res,buf) => { req.rawBody = buf }}));
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf } }));
 app.use("/api/stripe", stripeRoute);
 app.use("/api/entries", entriesR);
 app.use("/api/auth", authRoute);
