@@ -9,7 +9,7 @@ router.post('/', authJwt.verifyToken, entriesController.getEntries)
 
 router.post('/users/status', authJwt.verifyToken, entriesController.getUserEntriesStatus)
 
-router.get('/closeEntry/:entryId', authJwt.verifyToken, entriesController.closeEntry)
+router.put('/closeEntry/:entryId', authJwt.verifyToken, entriesController.closeEntry)
 
 router.post('/add', [authJwt.verifyToken, authJwt.isEmployee], entriesController.createEntry)
 

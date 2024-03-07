@@ -39,7 +39,7 @@ export const getEntries = async (req, res) => {
         where.push({ start_time: { [Op.between]: [start_time, end_time] } })
     }
     where.push({ user_id: user_id })
-    where.push({[Op.and]: sequelize.literal('(TIMEDIFF(end_time, start_time) < "10:00:00")')})
+    where.push({ [Op.and]: sequelize.literal('(TIMEDIFF(end_time, start_time) < "10:00:00")') })
     let result = await db.entries.findAll({
         order: [["id", "DESC"]],
         include: {
@@ -60,8 +60,8 @@ export const getEntries = async (req, res) => {
 }
 
 export const getStartedEntry = async (req, res) => {
-    const startedEntry = await models.getStartedEntry(req.userId)
-    io.emit('server:message', startedEntry);
+    const startedEntry = await db.entries.findOne({ where: { user_id: req.userId, status: 0 } })
+    // io.emit('server:message', startedEntry);
     res.json(startedEntry);
 }
 
@@ -69,10 +69,10 @@ export const createEntry = async (req, res) => {
     const date = moment().format('YYYY-MM-DD')
     const { start_time, status } = req.body
     const task = {
-        description: req.body.task
+        description: req.body.description
     }
+    console.log(req.body.description)
     const newTask = await db.tasks.create(task)
-    console.log('utc string', new Date().toUTCString())
     const data = {
         start_time: new Date(),
         end_time: new Date(),
@@ -82,10 +82,22 @@ export const createEntry = async (req, res) => {
         task_id: newTask.id
     }
     const result = await db.entries.create(data)
+
     if (result) {
+        const startedEntry = await db.entries.findOne({
+            where: { user_id: req.userId, status: 0 },
+            include: {
+                model: db.tasks,
+                required: false,
+                attributes: []
+            },
+            attributes: {
+                include: [[sequelize.literal('task.description'), 'description']]
+            }
+        })
         io.emit('server:message', result)
         io.emit('server:admin:newEntry')
-        res.json(result)
+        res.json(startedEntry)
     } else {
         res.json('There was a Trouble')
     }
@@ -99,6 +111,7 @@ export const closeEntry = async (req, res) => {
     }
 
     const result = await db.entries.update(entryData, { where: { id: req.params.entryId, status: 0 } })
+    await db.tasks.update({description: req.body.description}, {where: {id: req.body.task_id}})
     if (result) {
         // io.emit('server:closedEntry', [req.userId, entryData])
         io.emit('server:closedEntry')
