@@ -4,7 +4,7 @@ const router = Router()
 
 router.get('/', authJwt.verifyToken, async (req, res) => {
     try {
-        const timezoneRes = await fetch('https://api.timezonedb.com/v2.1/list-time-zone?key=GZH10SMNDN81&format=json')
+        const timezoneRes = await fetch('https://api.timezonedb.com/v2.1/list-time-zone?key=GZH10SMNDN81&format=json&country=US')
         const timezones = await timezoneRes.json()
         res.json(timezones)
     } catch (error) {

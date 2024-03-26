@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
   companies.init({
     name: DataTypes.STRING,
     description: DataTypes.STRING,
-    // user_id: DataTypes.INTEGER
+    timezone: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'companies',

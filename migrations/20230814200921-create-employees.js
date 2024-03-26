@@ -22,7 +22,8 @@ module.exports = {
         references: {
           model: 'companies',
           key: 'id'
-        }
+        },
+        onDelete: 'CASCADE'
       }
     });
   },

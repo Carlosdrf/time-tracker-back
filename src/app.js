@@ -2,20 +2,18 @@ import express from "express";
 import { Server as webSocketServer } from "socket.io";
 import http from "http";
 import morgan from "morgan";
-import entriesR from "./routes/entries.routes";
-import authRoute from "./routes/auth.routes";
-import reportRoute from "./routes/reports.routes";
-import stripeRoute from "./routes/stripe.routes";
-import userRoute from "./routes/users.routes";
-import roleRoute from "./routes/roles.routes";
-import companyRoute from "./routes/companies.routes";
-import timezoneRoute from './routes/timezone.routes';
+import entriesRoutes from "./routes/entries.routes";
+import authRoutes from "./routes/auth.routes";
+import reportRoutes from "./routes/reports.routes";
+import stripeRoutes from "./routes/stripe.routes";
+import userRoutes from "./routes/users.routes";
+import roleRoutes from "./routes/roles.routes";
+import companyRoutes from "./routes/companies.routes";
+import timezoneRoutes from "./routes/timezone.routes";
+import positionRoutes from "./routes/positions.routes";
 import { createRoles, insertRoles } from "./libs/initialSetup";
 import cors from "cors";
-// const options = {
-//   key: fs.readFileSync('certificate.key'),
-//   cert: fs.readFileSync('certificate.crt'),
-// }
+
 const cron = require("node-cron");
 
 // const {run: cronReport} = require('./controllers/report.controller')
@@ -24,22 +22,29 @@ const server = http.createServer(app);
 export const io = new webSocketServer(server, { cors: true, origins: ["*"] });
 
 // exec socket.js functions
-require('./socket')(io);
+require("./socket")(io);
 
 // createRoles();
 // insertRoles();
 app.use(cors());
 
 app.use(morgan("dev"));
-app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf } }));
-app.use("/api/stripe", stripeRoute);
-app.use("/api/entries", entriesR);
-app.use("/api/auth", authRoute);
-app.use("/api/reports", reportRoute);
-app.use("/api/users", userRoute);
-app.use("/api/roles", roleRoute);
-app.use("/api/companies", companyRoute);
-app.use("/api/timezones", timezoneRoute);
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
+app.use("/api/stripe", stripeRoutes);
+app.use("/api/entries", entriesRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/companies", companyRoutes);
+app.use("/api/positions", positionRoutes);
+app.use("/api/timezones", timezoneRoutes);
 // cron.schedule('* * * * *', cronReport.report)
 
 export default server;
