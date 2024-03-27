@@ -19,3 +19,8 @@ export const update = async (req, res) => {
   const updated = await db.positions.update({ title, description }, { where: { id: req.id } });
   res.json(updated);
 };
+
+export const deletePosition = async (req, res) =>{
+  const result = await db.positions.destroy({where: {id: req.id}})
+  res,json({message: 'Position Deleted'})
+}

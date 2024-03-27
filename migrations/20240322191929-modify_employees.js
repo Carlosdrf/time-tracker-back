@@ -14,7 +14,7 @@ module.exports = {
 
     await queryInterface.addColumn("employees", "position_id", {
       type: DataTypes.INTEGER,
-      references: { model: "positions", key: "id" },
+      references: { model: "positions", key: "id", onDelete: "SET NULL" },
     });
     await queryInterface.addColumn("employees", "hourly_rate", {
       type: DataTypes.FLOAT,
@@ -28,7 +28,10 @@ module.exports = {
      * Example:
      * await queryInterface.dropTable('users');
      */
-    await queryInterface.removeConstraint('employees', 'employees_position_id_foreign_idx')
+    await queryInterface.removeConstraint(
+      "employees",
+      "employees_position_id_foreign_idx"
+    );
     await queryInterface.removeColumn("employees", "position_id");
     await queryInterface.removeColumn("employees", "hourly_rate");
   },

@@ -84,6 +84,10 @@ export const getUsers = async (req, res) => {
         [sequelize.literal("`user_roles->role`.`id`"), "role"],
         [sequelize.literal("`companies_users->company`.`id`"), "company_id"],
         [
+          sequelize.literal("`companies_users->company`.`timezone`"),
+          "timezone",
+        ],
+        [
           sequelize.literal("`companies_users->company`.`name`"),
           "company_name",
         ],
@@ -119,6 +123,7 @@ export const getUsers = async (req, res) => {
         id: user.company_id,
         name: user.company_name,
         description: user.company_description,
+        timezone: user.timezone,
       };
     }
     if (user["employees.id"]) {
@@ -146,14 +151,14 @@ export const createUser = async (req, res) => {
       return 0;
     }
   }
-  
+
   let userInfo = {
     name,
     last_name,
     email,
     role,
   };
-  
+
   let encryptPass = "";
   if (password) {
     encryptPass = await usersModel.encryptPass(password);
@@ -169,14 +174,18 @@ export const createUser = async (req, res) => {
       });
       if (checkCompany.length > 0)
         await db.companies.update(
-          { name: company.name, description: company.description, timezone: company.timezone },
+          {
+            name: company.name,
+            description: company.description,
+            timezone: company.timezone,
+          },
           { where: { id: company.id } }
         );
       else {
         const newCompany = await db.companies.create({
           name: company.name,
           description: company.description,
-          timezone: company.timezone
+          timezone: company.timezone,
         });
         await db.companies_users.create({
           user_id: id,
@@ -190,11 +199,14 @@ export const createUser = async (req, res) => {
         const checkEmployee = await db.employees.findAll({
           where: { user_id: id },
         });
+        console.log(employee);
+        let employeeInfo = {
+          company_id: employee.company_id,
+          position_id: employee.position,
+          hourly_rate: employee.hourlyRate,
+        };
         if (checkEmployee.length > 0)
-          await db.employees.update(
-            { company_id: employee.id },
-            { where: { user_id: id } }
-          );
+          await db.employees.update(employeeInfo, { where: { user_id: id } });
         else
           await db.employees.create({ user_id: id, company_id: employee.id });
       }
@@ -206,8 +218,9 @@ export const createUser = async (req, res) => {
   }
   userInfo.company = company;
   userInfo.employee = employee;
-  userInfo.password = "";
+  delete userInfo.password
 
+  console.log(userInfo)
   res.json(userInfo);
 };
 
@@ -221,7 +234,7 @@ export const createNewUser = async (req, userInfo) => {
     let company = {
       name: req.body.company.name,
       description: req.body.company.description,
-      timezone: req.body.company.timezone
+      timezone: req.body.company.timezone,
     };
     let newCompany = await db.companies.create(company);
     await db.companies_users.create({
