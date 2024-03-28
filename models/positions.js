@@ -11,15 +11,17 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Positions.hasOne(models.employees, {foreignKey: 'user_id'})
+      Positions.hasOne(models.employees, { foreignKey: 'user_id' })
     }
   }
   Positions.init({
-    title: DataTypes.STRING,
+    title: { type: DataTypes.STRING, unique: true },
     description: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'positions',
   });
+  Positions.sync()
+
   return Positions;
 };

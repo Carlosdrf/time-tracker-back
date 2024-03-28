@@ -142,7 +142,7 @@ export const getUsers = async (req, res) => {
 
 export const createUser = async (req, res) => {
   console.log(req.body);
-  const { id, name, last_name, password, email, role, company, employee } =
+  const { id, name, last_name, password, email, role, company, employee, active } =
     req.body;
   if (id == "-1") {
     const checkUser = await db.users.findOne({ where: { email } });
@@ -157,6 +157,7 @@ export const createUser = async (req, res) => {
     last_name,
     email,
     role,
+    active
   };
 
   let encryptPass = "";

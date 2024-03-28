@@ -17,7 +17,7 @@ router.put('/:entryId', [authJwt.verifyToken, authJwt.isAdmin], entriesControlle
 
 router.put('/task/:task_id', [authJwt.verifyToken], entriesController.updateTaskById)
 
-router.delete('/:entryId',[authJwt.verifyToken, authJwt.isEmployee], entriesController.deleteProductById)
+router.delete('/:entryId', [authJwt.verifyToken, authJwt.isEmployee], entriesController.deleteProductById)
 
 router.get('/started', authJwt.verifyToken, entriesController.getStartedEntry)
 

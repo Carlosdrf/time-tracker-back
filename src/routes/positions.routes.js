@@ -9,4 +9,6 @@ router.post("/", authJwt.verifyToken, positions.create);
 
 router.put("/:id", authJwt.verifyToken, positions.update);
 
+router.delete('/:id', authJwt.verifyToken, positions.deletePosition)
+
 export default router;
