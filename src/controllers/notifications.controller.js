@@ -47,7 +47,6 @@ export const deleteNotification = async (req, res) => {
     const deleted = await db.notifications.destroy({
         where: { id: req.params.id }
     })
-    console.log(deleted)
     if (deleted) {
         return res.status(200).json({ message: 'Notification Deleted' })
     }
