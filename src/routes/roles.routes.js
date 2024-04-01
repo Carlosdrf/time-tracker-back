@@ -1,9 +1,9 @@
-import {Router} from 'express'
+import { Router } from 'express'
 import { authJwt } from "../middlewares";
-import roleModel from "../models/Role";
+import roleModel from "../services/Role";
 const router = Router()
 
-router.get('', authJwt.verifyToken, async(req, res)=>{
+router.get('', authJwt.verifyToken, async (req, res) => {
     const roles = await roleModel.verifyRoleExists()
     res.json(roles)
 })

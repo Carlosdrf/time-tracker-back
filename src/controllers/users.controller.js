@@ -1,7 +1,7 @@
-import usersModel from "../models/User";
+import usersModel from "../services/User";
 const { Op } = require("sequelize");
 import db, { sequelize } from "../../models";
-import roleModel from "../models/Role";
+import roleModel from "../services/Role";
 
 export const handleFilter = (items, filter) => {
   let searchBy = [];
@@ -132,6 +132,7 @@ export const getUsers = async (req, res) => {
         company: user["employees.company.name"],
         position: user["employees.position_id"],
         position_name: user["employees.positions.title"],
+        hourly_rate: user['employees.hourly_rate']
       };
     }
     return userFormat;
@@ -204,7 +205,7 @@ export const createUser = async (req, res) => {
         let employeeInfo = {
           company_id: employee.company_id,
           position_id: employee.position,
-          hourly_rate: employee.hourlyRate,
+          hourly_rate: employee.hourly_rate,
         };
         if (checkEmployee.length > 0)
           await db.employees.update(employeeInfo, { where: { user_id: id } });
@@ -244,7 +245,8 @@ export const createNewUser = async (req, userInfo) => {
     });
   } else if (roleModel.USER_ROLE == userInfo.role && req.body.employee.id) {
     let company_id = req.body.employee.id;
-    await db.employees.create({ user_id: user.dataValues.id, company_id });
+    console.log(req.body)
+    await db.employees.create({ user_id: user.dataValues.id, company_id, hourly_rate: req.body.employee.hourly_rate, position_id: req.body.employee.position });
   }
   userInfo.id = user.dataValues.id;
   return userInfo;
@@ -255,7 +257,7 @@ export const getEmployees = async (req, res) => {
     where: { user_id: req.userId },
   });
   const employees = await db.employees.findAll({
-    include: [{ model: db.users }],
+    include: [{ model: db.users, where: { active: { [Op.ne]: 0 } } }],
     where: { company_id: company.company_id },
   });
   res.json(employees);
@@ -269,12 +271,11 @@ export const verifyUsername = async (req, res) => {
   });
 
   if (userExists)
-    return res.status(300).json({ message: "that user is taken" });
+    return res.status(300).json({ message: "That user is taken" });
   res.status(200).json({ message: "you can use the username" });
 };
 
 export const deleteUser = async (req, res) => {
-  console.log(req.params);
   await db.users.destroy({ where: { id: req.params.id } });
   res.json({ message: "User Deleted Successfully" });
 };

@@ -14,8 +14,6 @@ module.exports = (io) => {
     } catch (error) {
       console.log('unable to join user')
     }
-
-    // console.log(io.sockets.adapter.rooms.get(userID))
     socket.on('disconnect', () => {
       console.log('User disconnected');
     });

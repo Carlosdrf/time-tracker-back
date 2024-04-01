@@ -1,7 +1,5 @@
-import models from "../models/Entries";
-import usersModel from "../models/User";
-import reportModel from "../models/Report";
-import roleModel from '../models/Role'
+import usersModel from "../services/User";
+import roleModel from '../services/Role'
 import * as format from '../services/utc.format'
 import moment from 'moment';
 import jwt from "jsonwebtoken";
@@ -11,22 +9,22 @@ import db, { sequelize } from '../../models'
 import { Op } from "sequelize";
 
 
-export const genNewToken = async (req) => {
-    let last_active = await usersModel.verifyLastActive(req.userId)
-    let token
-    const currentTime = Date.now()
-    last_active = last_active[0].last_active
-    const diff = Math.floor((currentTime - last_active.getTime()) / (1000 * 60 * 60))
-    if (diff === '23') {
-        const role = await roleModel.verifyUserRole(req.userId)
-        token = jwt.sign({ id: req.userId, role: role[0].id }, config.SECRET, {
-            expiresIn: 86400
-        })
-    } else {
-        token = null;
-    }
-    return token;
-}
+// export const genNewToken = async (req) => {
+//     let last_active = await usersModel.verifyLastActive(req.userId)
+//     let token
+//     const currentTime = Date.now()
+//     last_active = last_active[0].last_active
+//     const diff = Math.floor((currentTime - last_active.getTime()) / (1000 * 60 * 60))
+//     if (diff === '23') {
+//         const role = await roleModel.verifyUserRole(req.userId)
+//         token = jwt.sign({ id: req.userId, role: role[0].id }, config.SECRET, {
+//             expiresIn: 86400
+//         })
+//     } else {
+//         token = null;
+//     }
+//     return token;
+// }
 
 export const getEntries = async (req, res) => {
     // const token = await genNewToken(req)
@@ -109,9 +107,9 @@ export const closeEntry = async (req, res) => {
         end_time: new Date(moment().format('YYYY-MM-DD HH:mm:ss')),
         status: 1,
     }
-
+    console.log(req.params.entryId)
     const result = await db.entries.update(entryData, { where: { id: req.params.entryId, status: 0 } })
-    await db.tasks.update({description: req.body.description}, {where: {id: req.body.task_id}})
+    await db.tasks.update({ description: req.body.description }, { where: { id: req.body.task_id } })
     if (result) {
         // io.emit('server:closedEntry', [req.userId, entryData])
         io.emit('server:closedEntry')
@@ -122,10 +120,10 @@ export const closeEntry = async (req, res) => {
     }
 }
 
-export const getUserEntriesStatus = async (req, res) => {
-    const result = await models.getStartedEntry(req.body.id)
-    res.json(result)
-}
+// export const getUserEntriesStatus = async (req, res) => {
+//     const result = await models.getStartedEntry(req.body.id)
+//     res.json(result)
+// }
 
 export const updateEntryById = async (req, res) => {
     const { start_time, end_time, date, description, task_id } = req.body
@@ -133,7 +131,7 @@ export const updateEntryById = async (req, res) => {
         id: task_id,
         description
     })
-    await models.updateTask(taskData)
+    await db.tasks.update(taskData, { where: { id: task_id } })
 
     const entryData = ({
         start_time: new Date(start_time),
@@ -167,13 +165,17 @@ export const updateTaskById = async (req, res) => {
     }
 }
 
-export const deleteProductById = async (req, res) => {
-    const result = await models.deleteById(req.params.entryId)
-    if (result) {
-        res.json(result)
-    } else {
-        res.json('error')
+export const deleteEntry = async (req, res) => {
+    let result
+    const entry = await db.entries.findOne({ where: { id: req.params.id } })
+    if (entry) {
+        result = await db.entries.destroy({ where: { id: req.params.id } })
+        await db.tasks.destroy({ where: { id: entry.task_id } })
+        if (result) {
+            return res.status(200).json(result)
+        }
     }
+    res.status(400).json({ errorMessage: "There was an error" })
 }
 
 export const getEntryForReview = async (req, res) => {

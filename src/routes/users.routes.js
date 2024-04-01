@@ -5,8 +5,6 @@ const router = Router()
 
 router.post('/', authJwt.verifyToken, userController.getUsers)
 
-// router.get('/:id', authJwt.verifyToken, userController.getUserById)
-
 router.post('/create', authJwt.verifyToken, userController.createUser)
 
 router.put('/:id', authJwt.verifyToken, userController.updateUser)

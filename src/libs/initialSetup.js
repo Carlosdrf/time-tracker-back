@@ -1,13 +1,14 @@
-import roleModule from '../models/Role'
+import roleModule from '../services/Role'
 
-export const createRoles = async() =>{
+export const createRoles = async () => {
     try {
         const verify = await roleModule.verifyRoleExists();
-        if(verify.length > 0) return;
+        if (verify.length > 0) return;
         const Roles = [
             {
                 id: 1,
-                name: 'Admin'},
+                name: 'Admin'
+            },
             {
                 id: 2,
                 name: 'Employee'
@@ -23,14 +24,14 @@ export const createRoles = async() =>{
     } catch (error) {
         console.log(error)
     }
-    
+
 }
 
 // export const insertRoles = async() =>{
 //     const users = await roleModule.getUserProv()
 //     users.forEach(element => {
 //         console.log(element.name)
-//         roleModule.assignRole(element.id)        
+//         roleModule.assignRole(element.id)
 //     });
 //     return 0;
 // }

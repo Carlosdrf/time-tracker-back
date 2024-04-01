@@ -7,7 +7,7 @@ router.get('/', authJwt.verifyToken, entriesController.getEntries)
 
 router.post('/', authJwt.verifyToken, entriesController.getEntries)
 
-router.post('/users/status', authJwt.verifyToken, entriesController.getUserEntriesStatus)
+// router.post('/users/status', authJwt.verifyToken, entriesController.getUserEntriesStatus)
 
 router.put('/closeEntry/:entryId', authJwt.verifyToken, entriesController.closeEntry)
 
@@ -17,7 +17,7 @@ router.put('/:entryId', [authJwt.verifyToken, authJwt.isAdmin], entriesControlle
 
 router.put('/task/:task_id', [authJwt.verifyToken], entriesController.updateTaskById)
 
-router.delete('/:entryId', [authJwt.verifyToken, authJwt.isEmployee], entriesController.deleteProductById)
+router.delete('/:id', [authJwt.verifyToken, authJwt.isEmployee], entriesController.deleteEntry)
 
 router.get('/started', authJwt.verifyToken, entriesController.getStartedEntry)
 

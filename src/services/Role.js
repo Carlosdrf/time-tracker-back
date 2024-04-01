@@ -17,7 +17,5 @@ roleModel.verifyUserRole = async(user_id) =>{
 roleModel.createRole = async(data) =>{
     return await pool.query('INSERT INTO roles SET ?', [data])
 }
-// roleModel.getUserProv = async()=>{
-//     return await pool.query('SELECT * FROM users')
-// }
+
 module.exports = roleModel

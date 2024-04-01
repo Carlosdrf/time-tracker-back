@@ -6,9 +6,14 @@ export const get = async (req, res) => {
 }
 
 export const create = async (req, res) => {
-    const company = await db.companies.create(req.body)
-    console.log(company)
-    res.json(company)
+    try {
+        const company = await db.companies.create(req.body)
+        console.log(company)
+        res.status(200).json(company)
+    } catch (error) {
+        res.status(400).json({ message: "Possible Duplicate" })
+    }
+
 }
 export const update = async (req, res) => {
     const result = await db.companies.update(req.body, { where: { id: req.params.id } })

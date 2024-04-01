@@ -10,19 +10,12 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       name: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        unique: true
       },
       description: {
         type: Sequelize.STRING
       },
-      // user_id: {
-      //   type: Sequelize.INTEGER,
-      //   onDelete: 'CASCADE',
-      //   references: {
-      //     model: 'users',
-      //     key: 'id'
-      //   }
-      // }
     });
   },
   async down(queryInterface, Sequelize) {

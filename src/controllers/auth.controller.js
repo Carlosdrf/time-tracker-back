@@ -1,5 +1,5 @@
-import userModel from '../models/User'
-import roleModel from '../models/Role'
+import userModel from '../services/User'
+import roleModel from '../services/Role'
 import jwt from "jsonwebtoken";
 import config from '../config'
 import moment from 'moment'
@@ -14,20 +14,20 @@ export const signUp = async (req, res) => {
         password: await userModel.encryptPass(password),
         last_active: moment().format('YYYY-MM-DD HH:mm:ss')
     })
-    const savedUser = await userModel.createUser(newUser)
-    await roleModel.assignRole(savedUser.insertId);
+    const savedUser = await db.users.create(newUser)
+    await roleModel.assignRole(savedUser.id);
     if (savedUser) {
-        const user = await userModel.findUserByEmail(req.body.email)
-        const role = await roleModel.verifyUserRole(user[0].id)
-        const token = jwt.sign({ id: savedUser.insertId, role: role[0].id }, config.SECRET, {
+        const user = await db.users.findOne({ where: { email: req.body.email } })
+        const role = await db.user_roles.findOne({ where: { user_id: user.id } })
+        const token = jwt.sign({ id: savedUser.id, role: role.id }, config.SECRET, {
             expiresIn: 86400
         })
-        const username = user[0].name
-        const role_id = role[0].id
-        const email = user[0].email
+        const username = user.name
+        const role_id = role.id
+        const email = user.email
         res.json({ token, username, role_id, email })
     } else {
-        res.status(404).json('there was a problem')
+        res.status(404).json('There was a problem')
     }
 }
 

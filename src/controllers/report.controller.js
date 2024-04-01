@@ -3,7 +3,7 @@ import moment from "moment-timezone";
 import * as format from "../services/utc.format";
 import db, { sequelize } from "../../models";
 const Op = require("../../models").Sequelize.Op;
-import * as roleModel from "../models/Role";
+import * as roleModel from "../services/Role";
 
 import fs from "fs";
 const excel = require("excel4node");
@@ -76,8 +76,8 @@ export const getRange = async (req, res) => {
   }
 };
 export const getReport = async (req, res) => {
-  const end_time = await format.UTCend(req.body.lastSelect);
-  const start_time = await format.UTCStart(req.body.firstSelect);
+  const start_time = new Date(req.body.firstSelect);
+  const end_time = new Date(new Date(req.body.lastSelect).setHours(23, 59, 59));
   const dateRange = {
     start_time: new Date(req.body.firstSelect),
     end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
@@ -156,7 +156,6 @@ export const getReport = async (req, res) => {
 
   } else if (req.role == roleModel.EMPLOYER_ROLE && req.body.user_id == null) {
     console.log("client call");
-    // row = await models.getReport(dateRange, req.body.user_id);
     const company = await db.companies_users.findOne({ where: { user_id: req.userId } })
     const employees = await db.employees.findAll({ where: { company_id: company.id } })
     let ids = []
@@ -191,7 +190,6 @@ export const getReport = async (req, res) => {
     })
   } else {
     console.log("user call");
-    // row = await models.getReport(dateRange, req.body.user_id);
     row = await db.entries.findAll({
       where: {
         user_id: req.userId,

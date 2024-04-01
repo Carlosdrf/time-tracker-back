@@ -1,4 +1,4 @@
-import stripeModel from "../models/Payments";
+import stripeModel from "../services/Payments";
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 import db from '../../models';
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
