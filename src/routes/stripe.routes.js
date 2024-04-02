@@ -3,7 +3,7 @@ import * as stripeController from "../controllers/stripe.controller";
 import { authJwt } from "../middlewares";
 const router = Router()
 
-router.get('/', authJwt.verifyToken, stripeController.getPayments)
+router.get('/', [authJwt.verifyToken, authJwt.isEmployer], stripeController.getPayments)
 
 router.post('/checkout', authJwt.verifyToken, stripeController.paymentIntent)
 
