@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      notifications.belongsToMany(models.users, {through: models.users_notifications, foreignKey: 'notification_id'})
     }
   }
   notifications.init({

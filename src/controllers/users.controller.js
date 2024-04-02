@@ -24,9 +24,9 @@ export const handleFilter = (items, filter) => {
   });
   if (searchBy.length > 0) result[Op.or] = searchBy;
   if (filter) {
-    filterBy = [sequelize.literal("`user_roles->role`.`id` = " + filter)];
+    filterBy = [sequelize.literal("`roles->user_roles`.`role_id` = " + filter)];
   }
-  const filterExclude = [sequelize.literal("`user_roles->role`.`id` <> 1")];
+  const filterExclude = [sequelize.literal("`roles->user_roles`.`role_id` <> 1")];
   result[Op.and] = [...filterBy, ...filterExclude];
   return result;
 };
@@ -40,14 +40,9 @@ export const getUsers = async (req, res) => {
   let users = await db.users.findAll({
     include: [
       {
-        model: db.user_roles,
-        required: false,
+        model: db.roles,
         attributes: [],
-        include: {
-          model: db.roles,
-          attributes: [],
-          required: false,
-        },
+        required: false,
       },
       {
         model: db.companies_users,
@@ -81,7 +76,7 @@ export const getUsers = async (req, res) => {
     attributes: {
       exclude: ["password"],
       include: [
-        [sequelize.literal("`user_roles->role`.`id`"), "role"],
+        [sequelize.literal("`roles->user_roles`.`role_id`"), "role"],
         [sequelize.literal("`companies_users->company`.`id`"), "company_id"],
         [
           sequelize.literal("`companies_users->company`.`timezone`"),

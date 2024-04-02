@@ -11,6 +11,7 @@ export const verifyToken = async (req, res, next) => {
     const tokenKey = token.split(" ")[1];
     const decoded = jwt.verify(tokenKey, config.SECRET);
     req.userId = decoded.id;
+    console.log('req.userId', req.userId)
     // req.name = decoded.name;
     req.role = decoded.role;
     const user = await db.users.findOne({ where: { id: req.userId } });

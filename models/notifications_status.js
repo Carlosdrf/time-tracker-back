@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      notifications_status.hasMany(models.users_notifications, {foreignKey: 'status'})
     }
   }
   notifications_status.init({

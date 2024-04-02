@@ -39,9 +39,9 @@ export const getEntries = async (req, res) => {
   //       '(TIMEDIFF(end_time, start_time) < "10:00:00")'
   //     ),
   //   });
-  if (req.role != roleModel.ADMIN_ROLE) {
-    where.push({ [Op.and]: sequelize.literal("status <> 2") });
-  }
+  // if (req.role != roleModel.ADMIN_ROLE) {
+  where.push({ [Op.and]: sequelize.literal("status <> 2") });
+  // }
   let result = await db.entries.findAll({
     order: [["id", "DESC"]],
     include: {
@@ -144,18 +144,18 @@ export const closeEntry = async (req, res) => {
 // }
 
 export const updateEntryById = async (req, res) => {
-  const { start_time, end_time, date, description, task_id } = req.body;
+  const { start_time, end_time, date, description, task_id, status } = req.body;
   const taskData = {
     id: task_id,
     description,
   };
   await db.tasks.update(taskData, { where: { id: task_id } });
-
   const entryData = {
     start_time: new Date(start_time),
     end_time: new Date(end_time),
     date: new Date(date),
   };
+  if (status) entryData.status = status
   const result = await db.entries.update(entryData, {
     where: { id: req.params.entryId },
   });
@@ -212,16 +212,4 @@ export const deleteEntry = async (req, res) => {
     }
   }
   res.status(400).json({ errorMessage: "There was an error" });
-};
-
-export const getEntryForReview = async (req, res) => {
-  const { id } = req.body;
-  let where = "TIMEDIFF(end_time, start_time) >= 10:00:00)";
-  if (id) {
-    where = "TIMEDIFF(end_time, start_time) >= 10:00:00) AND user_id =".id;
-  }
-  const reviewEntry = db.entries.findAll({
-    where: sequelize.literal(where),
-  });
-  res.json(reviewEntry);
 };

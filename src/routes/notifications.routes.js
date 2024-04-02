@@ -13,4 +13,6 @@ router.put('/:id', [authJwt.verifyToken, authJwt.isAdmin], notificationControlle
 
 router.delete('/:id', [authJwt.verifyToken, authJwt.isAdmin], notificationController.deleteNotification)
 
+router.get('/:id/user/:user_id', notificationController.get)
+
 export default router
