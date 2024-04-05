@@ -17,6 +17,7 @@ module.exports = (sequelize, DataTypes) => {
       users.belongsToMany(models.roles, { foreignKey: 'user_id', through: models.user_roles })
       users.hasMany(models.entries, { foreignKey: 'user_id' })
       users.belongsToMany(models.notifications, { through: models.users_notifications, foreignKey: 'user_id' })
+      users.hasMany(models.schedules, { foreignKey: 'approved_by' })
     }
   }
   users.init({

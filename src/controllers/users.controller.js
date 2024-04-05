@@ -94,7 +94,7 @@ export const getUsers = async (req, res) => {
     },
   });
   let entriesReview = await db.entries.findAll({
-    where: sequelize.literal("TIMEDIFF(end_time, start_time) >= '10:00:00'"),
+    where: { status: 2 },
   });
   let usersForReview = [];
   entriesReview.forEach((reviewUser) => {

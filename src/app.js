@@ -12,6 +12,7 @@ import companyRoutes from "./routes/companies.routes";
 import timezoneRoutes from "./routes/timezone.routes";
 import positionRoutes from "./routes/positions.routes";
 import notificationRoutes from './routes/notifications.routes'
+import projectRoutes from "./routes/projects.routes";
 import { createRoles, insertRoles } from "./libs/initialSetup";
 import cors from "cors";
 
@@ -47,6 +48,7 @@ app.use("/api/companies", companyRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/timezones", timezoneRoutes);
 app.use("/api/notifications", notificationRoutes)
+app.use("/api/projects", projectRoutes)
 // cron.schedule('* * * * *', cronReport.report)
 
 export default server;

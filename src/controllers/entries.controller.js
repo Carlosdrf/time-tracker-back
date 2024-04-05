@@ -56,7 +56,7 @@ export const getEntries = async (req, res) => {
   });
   let suspicious = await db.entries.findAll({
     where: sequelize.literal(
-      `(TIMEDIFF(end_time, start_time) >= '10:00:00' OR status = 2) AND user_id=${user_id}`
+      `status = 2 AND user_id=${user_id}`
     ),
     order: [["start_time", "desc"]],
   });

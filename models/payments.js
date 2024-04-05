@@ -11,9 +11,9 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      payments.belongsTo(models.users, {foreignKey: 'user_id'})
-      payments.belongsTo(models.status, {foreignKey: 'status_id'})
-      payments.belongsTo(models.currencies, {foreignKey: 'currency_id'})
+      payments.belongsTo(models.users, { foreignKey: 'user_id' })
+      payments.belongsTo(models.status, { foreignKey: 'status_id' })
+      payments.belongsTo(models.currencies, { foreignKey: 'currency_id' })
     }
   }
 
@@ -23,12 +23,13 @@ module.exports = (sequelize, DataTypes) => {
     amount: DataTypes.FLOAT,
     user_id: DataTypes.INTEGER,
     status_id: DataTypes.INTEGER,
+    currency_id: DataTypes.INTEGER,
     created_at: DataTypes.DATE,
     updated_at: DataTypes.DATE
   }, {
     sequelize,
     timestamps: false,
-    tableName:'payments',
+    tableName: 'payments',
     modelName: 'payments',
   });
   return payments;

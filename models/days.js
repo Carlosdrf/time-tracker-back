@@ -9,6 +9,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Days.hasMany(models.schedules_days, {foreignKey: 'day_id'})
     }
   }
   Days.init(
