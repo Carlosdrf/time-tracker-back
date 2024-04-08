@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       projects.belongsTo(models.companies, { foreignKey: 'company_id' })
+      projects.hasOne(models.entries, { foreignKey: 'project_id' })
     }
   }
   projects.init({

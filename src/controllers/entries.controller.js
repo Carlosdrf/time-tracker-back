@@ -44,13 +44,21 @@ export const getEntries = async (req, res) => {
   // }
   let result = await db.entries.findAll({
     order: [["id", "DESC"]],
-    include: {
+    include: [{
       model: db.tasks,
       attributes: [],
     },
-    raw: true,
+    {
+      model: db.projects,
+      // attributes: []
+    }],
+    // raw: true,
     attributes: {
-      include: [[sequelize.literal("task.description"), "description"]],
+      include: [
+        [sequelize.literal("task.description"), "description"],
+        // [sequelize.literal("project.name"), "project"]
+        // [sequelize.literal("project.id"), "project"]
+      ],
     },
     where: where,
   });
