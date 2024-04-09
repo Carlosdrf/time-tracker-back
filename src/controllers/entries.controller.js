@@ -25,7 +25,6 @@ import roleModel from "../services/Role";
 
 export const getEntries = async (req, res) => {
   // const token = await genNewToken(req)
-  // const { user_id } = req.body
   const user_id = req.body.user_id ? req.body.user_id : req.userId;
   let where = [];
   if (req.body.start_time) {
@@ -34,11 +33,6 @@ export const getEntries = async (req, res) => {
     where.push({ start_time: { [Op.between]: [start_time, end_time] } });
   }
   where.push({ user_id: user_id });
-  //   where.push({
-  //     [Op.and]: sequelize.literal(
-  //       '(TIMEDIFF(end_time, start_time) < "10:00:00")'
-  //     ),
-  //   });
   // if (req.role != roleModel.ADMIN_ROLE) {
   where.push({ [Op.and]: sequelize.literal("status <> 2") });
   // }
@@ -50,14 +44,13 @@ export const getEntries = async (req, res) => {
     },
     {
       model: db.projects,
-      // attributes: []
+      attributes: []
     }],
-    // raw: true,
+    raw: true,
     attributes: {
       include: [
         [sequelize.literal("task.description"), "description"],
-        // [sequelize.literal("project.name"), "project"]
-        // [sequelize.literal("project.id"), "project"]
+        [sequelize.literal("project.name"), "project"]
       ],
     },
     where: where,
@@ -71,59 +64,63 @@ export const getEntries = async (req, res) => {
   res.status(200).json({ entries: result, suspicious });
 };
 
-export const getStartedEntry = async (req, res) => {
-  const startedEntry = await db.entries.findOne({
-    where: { user_id: req.userId, status: 0 },
-  });
-  // io.emit('server:message', startedEntry);
-  res.json(startedEntry);
-};
-
 export const createEntry = async (req, res) => {
   const date = moment().format("YYYY-MM-DD");
-  const { start_time, status } = req.body;
+  const { start_time, status, description, project_id } = req.body;
   const task = {
-    description: req.body.description,
+    description
   };
-  const newTask = await db.tasks.create(task);
   const data = {
     start_time: new Date(),
     end_time: new Date(),
     date,
     user_id: req.userId,
     status,
-    task_id: newTask.id,
+    project_id: project_id ? project_id : null
   };
-  const result = await db.entries.create(data);
-
-  if (result) {
-    const startedEntry = await db.entries.findOne({
-      where: { user_id: req.userId, status: 0 },
-      include: {
-        model: db.tasks,
-        required: false,
-        attributes: [],
-      },
-      attributes: {
-        include: [[sequelize.literal("task.description"), "description"]],
-      },
-    });
-    io.emit("server:message", result);
-    io.emit("server:admin:newEntry");
-    res.json(startedEntry);
-  } else {
-    res.json("There was a Trouble");
+  try {
+    const newTask = await db.tasks.create(task);
+    data.task_id = newTask.id
+    const result = await db.entries.create(data);
+    if (result) {
+      const startedEntry = await db.entries.findOne({
+        where: { user_id: req.userId, status: 0 },
+        include: [{
+          model: db.tasks,
+          required: false,
+          attributes: [],
+        }, {
+          model: db.projects,
+          required: false,
+          attributes: []
+        }],
+        raw: true,
+        attributes: {
+          include: [
+            [sequelize.literal("task.description"), "description"],
+            [sequelize.literal("project.name"), "project"]
+          ],
+        },
+      });
+      io.emit("server:message", startedEntry);
+      io.emit("server:admin:newEntry");
+      res.json(startedEntry);
+    }
+  } catch (error) {
+    return res.json("There was a Trouble");
   }
 };
 
 export const closeEntry = async (req, res) => {
+  const { description, project_id, task_id, start_time } = req.body
   let entryData = {
-    end_time: new Date(moment().format("YYYY-MM-DD HH:mm:ss")),
+    end_time: new Date(),
     status: 1,
+    project_id
   };
   const diff =
     (new Date(moment().format("YYYY-MM-DD HH:mm:ss")) -
-      new Date(req.body.start_time)) /
+      new Date(start_time)) /
     1000 /
     60 /
     60;
@@ -133,8 +130,8 @@ export const closeEntry = async (req, res) => {
     where: { id: req.params.entryId, status: 0 },
   });
   await db.tasks.update(
-    { description: req.body.description },
-    { where: { id: req.body.task_id } }
+    { description: description },
+    { where: { id: task_id } }
   );
   if (result) {
     // io.emit('server:closedEntry', [req.userId, entryData])
@@ -145,11 +142,6 @@ export const closeEntry = async (req, res) => {
     res.status(400).json({ message: "there whas an error" });
   }
 };
-
-// export const getUserEntriesStatus = async (req, res) => {
-//     const result = await models.getStartedEntry(req.body.id)
-//     res.json(result)
-// }
 
 export const updateEntryById = async (req, res) => {
   const { start_time, end_time, date, description, task_id, status } = req.body;
@@ -178,7 +170,6 @@ export const updateTaskById = async (req, res) => {
   const taskData = {
     description: description == null ? "" : description,
   };
-  console.log(req.body.task_id);
   const updated =
     req.body.task_id != null
       ? await db.tasks.update(taskData, { where: { id: req.params.task_id } })

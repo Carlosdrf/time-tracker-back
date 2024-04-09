@@ -4,7 +4,6 @@ const errorMessage = "There was an error, try again later"
 
 export const get = async (req, res) => {
     const projects = await db.projects.findAll()
-    console.log(projects)
     if (projects) return res.status(200).json(projects)
     res.status(400).json({ errorMessage })
 }
@@ -23,7 +22,6 @@ export const create = async (req, res) => {
 export const update = async (req, res) => {
     const { name, description, user_id } = req.body
     const [updated] = await db.projects.update(req.body, { where: { id: req.params.id } })
-    console.log('updated project: ', updated)
     let project;
     if (updated) {
         project = await db.projects.findOne({ where: { id: req.params.id } })

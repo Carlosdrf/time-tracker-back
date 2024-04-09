@@ -19,6 +19,6 @@ router.put('/task/:task_id', [authJwt.verifyToken], entriesController.updateTask
 
 router.delete('/:id', [authJwt.verifyToken, authJwt.isEmployee], entriesController.deleteEntry)
 
-router.get('/started', authJwt.verifyToken, entriesController.getStartedEntry)
+// router.get('/started', authJwt.verifyToken, entriesController.getStartedEntry)
 
 export default router;
