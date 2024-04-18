@@ -49,6 +49,5 @@ app.use("/api/positions", positionRoutes);
 app.use("/api/timezones", timezoneRoutes);
 app.use("/api/notifications", notificationRoutes)
 app.use("/api/projects", projectRoutes)
-// cron.schedule('* * * * *', cronReport.report)
 
 export default server;

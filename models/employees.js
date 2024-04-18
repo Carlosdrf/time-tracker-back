@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
       employees.belongsTo(models.users, { foreignKey: "user_id" });
       employees.belongsTo(models.companies, { foreignKey: "company_id" });
       employees.belongsTo(models.positions, { foreignKey: "position_id" });
-      employees.hasMany(models.schedules, {foreignKey: 'employee_id'})
+      employees.hasMany(models.schedules, { foreignKey: 'employee_id' })
     }
   }
   employees.init(
@@ -26,6 +26,18 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: "employees",
       timestamps: false,
+      hooks: {
+        beforeUpdate: async (employee, options) => {
+          const previous = await sequelize.models.employees.findByPk(employee.id)
+
+          if (employee.company_id != previous.company_id) {
+            const user = await sequelize.models.users.findByPk(employee.user_id)
+            const projects = await user.getProjects()
+            await user.removeProjects(projects);      
+            console.log('xd?')    
+          }
+        }
+      }
     }
   );
   return employees;

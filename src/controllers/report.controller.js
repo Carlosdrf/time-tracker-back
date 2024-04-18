@@ -38,29 +38,31 @@ export const getRange = async (req, res) => {
     req.body.user_id != null
   ) {
     let row;
+
     console.log('client/admin with a user id provided')
     const where = { status: 1, user_id: req.body.user_id, start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] } }
-    if (req.body.role == 3) {
+    if (req.body.role == 2) {
+      row = await db.entries.findAll({
+        where: where,
+      })
+    } else {
       // if there's a role received from the front end and the role is equal to employer type it will look for their employees
-      const { company_id } = await db.companies_users.findOne({ where: { user_id: req.body.user_id } })
-      const employees = await db.employees.findAll({ where: { company_id: company_id } })
+      // const { company_id } = await db.companies_users.findOne({ where: { company_id: req.body.id } })
+      const employees = await db.employees.findAll({ where: { company_id: req.body.user_id } })
       const ids = employees.map((employee, i) => employee.user_id);
       row = await db.entries.findAll({
         where: { user_id: ids, status: 1 },
         start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
       })
-    } else {
-      row = await db.entries.findAll({
-        where: where,
-      })
     }
     res.json(row);
   } else if (req.role == roleModel.EMPLOYER_ROLE && req.body.user_id == null) {
-    const companies = await db.companies_users.findOne({
+    console.log('client/admin with no user id provided')
+    const { company_id } = await db.companies_users.findOne({
       where: { user_id: req.userId },
     });
     const employees = await db.employees.findAll({
-      where: { company_id: companies.id },
+      where: { company_id },
     });
     let users_id = []
     employees.forEach((item, i) => {
@@ -123,14 +125,14 @@ export const getReport = async (req, res) => {
       status: 1
     }
 
-    if (req.body.role == 3) {
-      const { company_id } = await db.companies_users.findOne({ where: { user_id: req.body.user_id } })
-      const employees = await db.employees.findAll({ where: { company_id: company_id } })
+    if (req.body.role == 2) {
+      where.user_id = req.body.user_id
+    } else {
+      const employees = await db.employees.findAll({ where: { company_id: req.body.user_id } })
       const ids = employees.map((employee, i) => employee.user_id);
       where.user_id = ids
-    } else {
-      where.user_id = req.body.user_id
     }
+
     row = await await db.entries.findAll({
       where: where,
       include: [{
@@ -156,8 +158,8 @@ export const getReport = async (req, res) => {
 
   } else if (req.role == roleModel.EMPLOYER_ROLE && req.body.user_id == null) {
     console.log("client call");
-    const company = await db.companies_users.findOne({ where: { user_id: req.userId } })
-    const employees = await db.employees.findAll({ where: { company_id: company.id } })
+    const { company_id } = await db.companies_users.findOne({ where: { user_id: req.userId } })
+    const employees = await db.employees.findAll({ where: { company_id } })
     let ids = []
     employees.forEach((element, i) => {
       ids[i] = element.user_id

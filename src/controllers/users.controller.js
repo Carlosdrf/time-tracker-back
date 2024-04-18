@@ -45,18 +45,11 @@ export const getUsers = async (req, res) => {
         required: false,
       },
       {
-        model: db.companies_users,
+        model: db.companies,
         required: false,
-        attributes: [],
-        include: {
-          model: db.companies,
-          attributes: [],
-          required: false,
-        },
       },
       {
         model: db.employees,
-        // attributes: [],
         required: false,
         include: [
           {
@@ -77,19 +70,6 @@ export const getUsers = async (req, res) => {
       exclude: ["password"],
       include: [
         [sequelize.literal("`roles->user_roles`.`role_id`"), "role"],
-        [sequelize.literal("`companies_users->company`.`id`"), "company_id"],
-        [
-          sequelize.literal("`companies_users->company`.`timezone`"),
-          "timezone",
-        ],
-        [
-          sequelize.literal("`companies_users->company`.`name`"),
-          "company_name",
-        ],
-        [
-          sequelize.literal("`companies_users->company`.`description`"),
-          "company_description",
-        ],
       ],
     },
   });
@@ -113,12 +93,12 @@ export const getUsers = async (req, res) => {
       );
     }
     userFormat.active = user.active;
-    if (user.company_id) {
+    if (user['companies.id']) {
       userFormat.company = {
-        id: user.company_id,
-        name: user.company_name,
-        description: user.company_description,
-        timezone: user.timezone,
+        id: user['companies.id'],
+        name: user['companies.name'],
+        description: user['companies.description'],
+        timezone: user['companies.timezone'],
       };
     }
     if (user["employees.id"]) {
@@ -126,7 +106,7 @@ export const getUsers = async (req, res) => {
         id: user["employees.company.id"],
         company: user["employees.company.name"],
         position: user["employees.position_id"],
-        position_name: user["employees.positions.title"],
+        position_name: user["employees.position.title"],
         hourly_rate: user['employees.hourly_rate']
       };
     }
@@ -166,44 +146,33 @@ export const createUser = async (req, res) => {
     await db.users.update(userInfo, { where: { id: id } });
     await db.user_roles.update({ role_id: role }, { where: { user_id: id } });
     if (roleModel.EMPLOYER_ROLE == role) {
-      const checkCompany = await db.companies_users.findAll({
-        where: { user_id: id },
-      });
-      if (checkCompany.length > 0)
-        await db.companies.update(
-          {
-            name: company.name,
-            description: company.description,
-            timezone: company.timezone,
-          },
-          { where: { id: company.id } }
-        );
-      else {
-        const newCompany = await db.companies.create({
-          name: company.name,
-          description: company.description,
-          timezone: company.timezone,
-        });
-        await db.companies_users.create({
-          user_id: id,
-          company_id: newCompany.dataValues.id,
-        });
+      const user = await db.users.findByPk(id)
+      const userCompany = await user.getCompanies()
+      if (userCompany.length > 0 && company.id != userCompany[0].id) {
+        await user.removeCompany(userCompany[0].id)
+        await user.addCompany(company.id)
       }
+      if (!userCompany.length > 0) {
+        await user.addCompany(company.id)
+      }
+
       await db.employees.destroy({ where: { user_id: id } });
     }
     if (roleModel.USER_ROLE == role) {
       if (employee.id != "") {
-        const checkEmployee = await db.employees.findAll({
+        const checkEmployee = await db.employees.findOne({
           where: { user_id: id },
         });
-        console.log(employee);
         let employeeInfo = {
-          company_id: employee.company_id,
+          company_id: employee.id,
           position_id: employee.position,
           hourly_rate: employee.hourly_rate,
         };
-        if (checkEmployee.length > 0)
+        if (checkEmployee) {
+          checkEmployee.company_id = employeeInfo.company_id
+          await checkEmployee.save();
           await db.employees.update(employeeInfo, { where: { user_id: id } });
+        }
         else
           await db.employees.create({ user_id: id, company_id: employee.id });
       }
@@ -216,10 +185,34 @@ export const createUser = async (req, res) => {
   userInfo.company = company;
   userInfo.employee = employee;
   delete userInfo.password
-
-  console.log(userInfo)
-  res.json(userInfo);
+  const user = await getUserInfo(id)
+  res.json(user);
 };
+
+export const getUserInfo = async (userId) => {
+  let user = await db.users.findOne({
+    where: { id: userId },
+    include: [
+      {
+        model: db.roles,
+        required: false,
+        attributes: []
+      },
+    ],
+    attributes: {
+      include: [[sequelize.literal('`roles`.`id`'), 'role']]
+    }
+  })
+  const company = await user.getCompanies()
+  const employee = await user.getEmployees()
+  if (company.length > 0) user.dataValues.company = company[0]
+  if (employee.length > 0) user.dataValues.employee = {
+    id: employee[0].company_id,
+    position: employee[0].position_id,
+    hourly_rate: employee[0].hourly_rate,
+  }
+  return user;
+}
 
 export const createNewUser = async (req, userInfo) => {
   const user = await db.users.create(userInfo);
@@ -233,11 +226,8 @@ export const createNewUser = async (req, userInfo) => {
       description: req.body.company.description,
       timezone: req.body.company.timezone,
     };
-    let newCompany = await db.companies.create(company);
-    await db.companies_users.create({
-      user_id: user.dataValues.id,
-      company_id: newCompany.dataValues.id,
-    });
+    await user.addCompany(req.body.company.id)
+
   } else if (roleModel.USER_ROLE == userInfo.role && req.body.employee.id) {
     let company_id = req.body.employee.id;
     console.log(req.body)
@@ -252,8 +242,20 @@ export const getEmployees = async (req, res) => {
     where: { user_id: req.userId },
   });
   const employees = await db.employees.findAll({
-    include: [{ model: db.users, where: { active: { [Op.ne]: 0 } } }],
+    include: [
+      {
+        model: db.users, where: { active: { [Op.ne]: 0 } },
+        attributes: {
+          include: [[sequelize.literal('`user->roles`.`id`'), 'role']]
+        },
+        include: {
+          model: db.roles,
+          attributes: []
+        }
+      }
+    ],
     where: { company_id: company.company_id },
+
   });
   res.json(employees);
 };
@@ -279,3 +281,29 @@ export const updateUser = async (req, res) => {
   await db.users.update(req.body, { where: { id: req.params.id } });
   res.json(req.body);
 };
+
+export const testEndpoint = async (req, res) => {
+  let user = await db.users.findOne({
+    where: { id: 33 },
+    include: [
+      {
+        model: db.roles,
+        required: false,
+        attributes: []
+      },
+    ],
+    attributes: {
+      include: [[sequelize.literal('`roles`.`id`'), 'role']]
+    }
+  })
+  const company = await user.getCompanies()
+  const employee = await user.getEmployees()
+  if (company.length > 0) user.dataValues.company = company[0]
+  if (employee.length > 0) user.dataValues.employee = {
+    id: employee[0].company_id,
+    position: employee[0].position_id,
+    hourly_rate: employee[0].hourly_rate,
+  }
+  console.log(user)
+  res.json(user)
+}

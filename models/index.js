@@ -49,6 +49,8 @@ const testconn = async () => {
   }
 
 }
+// sequelize.sync()
+
 testconn();
 
 db.sequelize = sequelize;

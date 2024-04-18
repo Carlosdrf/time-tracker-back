@@ -40,7 +40,7 @@ export const isEmployee = async (req, res, next) => {
 
 export const isEmployer = async (req, res, next) => {
   const role = await roleModel.verifyUserRole(req.userId);
-  if (role[0].id === 3) {
+  if (role[0].id != 2) {
     next();
     return;
   }
