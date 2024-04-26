@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       projects.belongsTo(models.companies, { foreignKey: 'company_id' })
       projects.hasOne(models.entries, { foreignKey: 'project_id' })
-      projects.belongsToMany(models.users, {through: 'users_projects'})
+      projects.belongsToMany(models.users, { through: 'users_projects' })
     }
   }
   projects.init({

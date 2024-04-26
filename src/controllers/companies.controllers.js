@@ -1,10 +1,18 @@
 import db, { sequelize } from "../../models";
+import roles from "../services/Role";
 
 const errorMessage = 'There was an error'
 
 export const get = async (req, res) => {
-    const companies = await db.companies.findAll()
-    res.json(companies)
+    let companies = [];
+    if (req.role == roles.EMPLOYER_ROLE) {
+        const user = await db.users.findByPk(req.userId);
+        companies = await user.getCompanies();
+    } else {
+        companies = await db.companies.findAll();
+    }
+    if (companies) return res.status(200).json(companies)
+    res.status(400).json({ errorMessage })
 }
 
 export const getEmployees = async (req, res) => {
