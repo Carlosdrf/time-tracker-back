@@ -11,6 +11,6 @@ router.post("/", authJwt.verifyToken, projectController.create)
 
 router.put("/:id", authJwt.verifyToken, projectController.update)
 
-router.delete("/:id", authJwt.verifyToken, projectController.deleteProject)
+router.delete("/:id", [authJwt.verifyToken, authJwt.isEmployer], projectController.deleteProject)
 
 export default router

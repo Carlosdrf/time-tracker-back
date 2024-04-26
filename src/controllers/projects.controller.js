@@ -1,28 +1,27 @@
 import db from "../../models";
 import roles from "../services/Role"
 
-const errorMessage = "There was an error, try again later"
+const errorMessage = "There was an error, try again later";
 
 export const get = async (req, res) => {
-
+    let projects = [];
     if (req.role == roles.EMPLOYER_ROLE) {
         const employer = await db.users.findByPk(req.userId)
         const [company] = await employer.getCompanies()
-        const projects = await company.getProjects()
-        return res.status(200).json(projects)
+        projects = await company.getProjects()
     }
-    if (req.role != roles.ADMIN_ROLE) {
+    if (req.role == roles.USER_ROLE) {
         const user = await db.users.findByPk(req.userId)
-        const projects = await user.getProjects()
-        return res.status(200).json(projects)
+        projects = await user.getProjects()
     }
-
-    let projects = await db.projects.findAll({
-        include: [
-            { model: db.users },
-            { model: db.companies }
-        ],
-    })
+    if (req.role == roles.ADMIN_ROLE) {
+        projects = await db.projects.findAll({
+            include: [
+                { model: db.users },
+                { model: db.companies }
+            ],
+        })
+    }
 
     if (projects) return res.status(200).json(projects)
     res.status(400).json({ errorMessage })
@@ -81,8 +80,21 @@ export const update = async (req, res) => {
 }
 
 export const deleteProject = async (req, res) => {
+    if (req.role == roles.EMPLOYER_ROLE) {
+        const user = await db.users.findByPk(req.userId)
+        const [company] = await user.getCompanies()
+        const projects = await db.projects.findOne({
+            where: {
+                id: req.params.id,
+                company_id: company.id
+            }
+        })
+        if (!projects) return res.status(400).json({
+            message: "Can't delete this projects, you're not the owner"
+        });
+    }
     const deleted = await db.projects.destroy({ where: { id: req.params.id } })
-    console.log('deleted: ', deleted)
-    if (deleted) return res.status(200).json({ message: 'project deleted' })
+
+    if (deleted) return res.status(200).json({ message: 'Project deleted' })
     res.status(400).json({ errorMessage })
 }
