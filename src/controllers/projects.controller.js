@@ -4,10 +4,17 @@ import roles from "../services/Role"
 const errorMessage = "There was an error, try again later"
 
 export const get = async (req, res) => {
+
+    if (req.role == roles.EMPLOYER_ROLE) {
+        const employer = await db.users.findByPk(req.userId)
+        const [company] = await employer.getCompanies()
+        const projects = await company.getProjects()
+        return res.status(200).json(projects)
+    }
     if (req.role != roles.ADMIN_ROLE) {
         const user = await db.users.findByPk(req.userId)
         const projects = await user.getProjects()
-        return res.json(projects)
+        return res.status(200).json(projects)
     }
 
     let projects = await db.projects.findAll({
