@@ -16,7 +16,6 @@ export const get = async (req, res) => {
 }
 
 export const getEmployees = async (req, res) => {
-
     const company = await db.companies.findOne({
         include: [{
             model: db.employees,
@@ -50,6 +49,11 @@ export const update = async (req, res) => {
     res.status(400).json({ errorMessage })
 }
 
+export const createPossibleClient = async (req, res) => {
+    const { name, company, email, phone, positions, tasks_description } = req.body
+    console.log(req.body)
+    res.json(req.body)
+}
 export const deleteCompany = async (req, res) => {
     const deleted = await db.companies.destroy({ where: { id: req.params.id } })
     res.json(deleted)

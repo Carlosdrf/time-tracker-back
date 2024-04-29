@@ -63,7 +63,15 @@ export const getRange = async (req, res) => {
     });
     const employees = await db.employees.findAll({
       where: { company_id },
+      include: [
+        {
+          model: db.users,
+          where: { active: 1 },
+          attributes: []
+        }
+      ]
     });
+
     let users_id = []
     employees.forEach((item, i) => {
       users_id[i] = item.dataValues.user_id
@@ -100,7 +108,8 @@ export const getReport = async (req, res) => {
       },
       include: [{
         model: db.users,
-        attributes: []
+        attributes: [],
+        where: { active: 1 }
       },
       {
         model: db.tasks,
@@ -137,7 +146,8 @@ export const getReport = async (req, res) => {
       where: where,
       include: [{
         model: db.users,
-        attributes: []
+        attributes: [],
+        where: { active: 1 }
       },
       {
         model: db.tasks,
@@ -172,7 +182,8 @@ export const getReport = async (req, res) => {
       },
       include: [{
         model: db.users,
-        attributes: []
+        attributes: [],
+        where: { active: 1 }
       },
       {
         model: db.tasks,
@@ -200,6 +211,7 @@ export const getReport = async (req, res) => {
       },
       include: [{
         model: db.users,
+        where: { active: 1 },
         attributes: []
       },
       {
