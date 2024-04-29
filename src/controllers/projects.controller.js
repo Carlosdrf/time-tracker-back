@@ -8,7 +8,15 @@ export const get = async (req, res) => {
     if (req.role == roles.EMPLOYER_ROLE) {
         const employer = await db.users.findByPk(req.userId)
         const [company] = await employer.getCompanies()
-        projects = await company.getProjects()
+        projects = await company.getProjects({
+        include: [
+            {
+                model: db.users,
+                as: 'users',
+                through: { attributes: [] }
+            },
+            ],
+        })
     }
     if (req.role == roles.USER_ROLE) {
         const user = await db.users.findByPk(req.userId)
