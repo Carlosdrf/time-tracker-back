@@ -30,6 +30,11 @@ export const getRange = async (req, res) => {
   };
   if (req.role == roleModel.ADMIN_ROLE && req.body.user_id == null) {
     const row = await db.entries.findAll({
+      include: [{
+        model: db.users,
+        attributes: [],
+        where: { active: 1 }
+      }],
       where: { status: 1, start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] } },
     })
     res.json(row);
