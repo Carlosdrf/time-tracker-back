@@ -4,31 +4,34 @@ import roles from "../services/Role"
 const errorMessage = "There was an error, try again later";
 
 export const get = async (req, res) => {
+    console.log(req.params.type)
     let projects = [];
     if (req.role == roles.EMPLOYER_ROLE) {
+        console.log(req.body.type)
+        let where = req.body.type == 'user' ? { id: req.body.userId } : ''
+
         const employer = await db.users.findByPk(req.userId)
         const [company] = await employer.getCompanies()
         projects = await company.getProjects({
-        include: [
-            {
-                model: db.users,
-                as: 'users',
-                through: { attributes: [] }
-            },
+            include: [
+                {
+                    model: db.users,
+                    as: 'users',
+                    through: { attributes: [] },
+                    where
+                },
             ],
-        })
+        });
     }
     if (req.role == roles.USER_ROLE) {
-        const user = await db.users.findByPk(req.userId)
-        projects = await user.getProjects()
+        const user = await db.users.findByPk(req.userId);
+        projects = await user.getProjects();
     }
     if (req.role == roles.ADMIN_ROLE) {
-        projects = await db.projects.findAll({
-            include: [
-                { model: db.users },
-                { model: db.companies }
-            ],
-        })
+        let include = [{ model: db.companies, model: db.users }]
+        if (req.params.type == 'user') include = { model: db.users, where: { id: req.body.userId } }
+        if (req.params.type == 'company') include = { model: db.companies, where: { id: req.body.userId } }
+        projects = await db.projects.findAll({ include });
     }
 
     if (projects) return res.status(200).json(projects)

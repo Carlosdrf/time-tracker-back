@@ -29,6 +29,7 @@ export const getRange = async (req, res) => {
     end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
   };
   if (req.role == roleModel.ADMIN_ROLE && req.body.user_id == null) {
+    console.log('admin and no user provided')
     const row = await db.entries.findAll({
       include: [{
         model: db.users,
@@ -62,7 +63,7 @@ export const getRange = async (req, res) => {
     }
     res.json(row);
   } else if (req.role == roleModel.EMPLOYER_ROLE && req.body.user_id == null) {
-    console.log('client/admin with no user id provided')
+    console.log('client with no user id provided')
     const { company_id } = await db.companies_users.findOne({
       where: { user_id: req.userId },
     });
@@ -106,11 +107,13 @@ export const getReport = async (req, res) => {
   let row;
   if (req.role == 1 && req.body.user_id == null) {
     console.log('admin and no user id provided')
+    let where = {
+      start_time: { [Op.between]: [start_time, end_time] },
+      status: 1,
+    }
+    if (req.body.project) where.project_id = req.body.project
     row = await db.entries.findAll({
-      where: {
-        start_time: { [Op.between]: [start_time, end_time] },
-        status: 1
-      },
+      where,
       include: [{
         model: db.users,
         attributes: [],
@@ -120,6 +123,11 @@ export const getReport = async (req, res) => {
         model: db.tasks,
         required: false,
         attributes: []
+      },
+      {
+        model: db.projects,
+        required: false,
+        attributes: []
       }],
       raw: true,
       attributes: {
@@ -127,7 +135,8 @@ export const getReport = async (req, res) => {
           [sequelize.literal('user.name'), 'name'],
           [sequelize.literal('user.last_name'), 'last_name'],
           [sequelize.literal('user.email'), 'email'],
-          [sequelize.literal('task.description'), 'description']
+          [sequelize.literal('task.description'), 'description'],
+          [sequelize.literal('project.name'), 'project']
         ]
       },
       order: [[sequelize.literal('user.name')], [sequelize.literal('user.last_name')], ['start_time', 'desc']]
@@ -138,6 +147,7 @@ export const getReport = async (req, res) => {
       start_time: { [Op.between]: [start_time, end_time] },
       status: 1
     }
+    if (req.body.project) where.project_id = req.body.project
 
     if (req.body.role == 2) {
       where.user_id = req.body.user_id
@@ -148,7 +158,7 @@ export const getReport = async (req, res) => {
     }
 
     row = await await db.entries.findAll({
-      where: where,
+      where,
       include: [{
         model: db.users,
         attributes: [],
@@ -158,6 +168,11 @@ export const getReport = async (req, res) => {
         model: db.tasks,
         required: false,
         attributes: []
+      },
+      {
+        model: db.projects,
+        required: false,
+        attributes: []
       }],
       raw: true,
       attributes: {
@@ -165,26 +180,30 @@ export const getReport = async (req, res) => {
           [sequelize.literal('user.name'), 'name'],
           [sequelize.literal('user.last_name'), 'last_name'],
           [sequelize.literal('user.email'), 'email'],
-          [sequelize.literal('task.description'), 'description']
+          [sequelize.literal('task.description'), 'description'],
+          [sequelize.literal('project.name'), 'project']
         ]
       },
       order: [[sequelize.literal('user.name')], ['start_time', 'desc']]
     })
 
   } else if (req.role == roleModel.EMPLOYER_ROLE && req.body.user_id == null) {
-    console.log("client call");
+    console.log("client call and no user provided");
     const { company_id } = await db.companies_users.findOne({ where: { user_id: req.userId } })
     const employees = await db.employees.findAll({ where: { company_id } })
     let ids = []
     employees.forEach((element, i) => {
       ids[i] = element.user_id
     });
+    let where = {
+      user_id: ids,
+      start_time: { [Op.between]: [start_time, end_time] },
+      status: 1
+    }
+    if (req.body.project) where.project_id = req.body.project
+
     row = await db.entries.findAll({
-      where: {
-        user_id: ids,
-        start_time: { [Op.between]: [start_time, end_time] },
-        status: 1
-      },
+      where,
       include: [{
         model: db.users,
         attributes: [],
@@ -194,6 +213,11 @@ export const getReport = async (req, res) => {
         model: db.tasks,
         required: false,
         attributes: []
+      },
+      {
+        model: db.projects,
+        required: false,
+        attributes: []
       }],
       raw: true,
       attributes: {
@@ -201,19 +225,23 @@ export const getReport = async (req, res) => {
           [sequelize.literal('user.name'), 'name'],
           [sequelize.literal('user.last_name'), 'last_name'],
           [sequelize.literal('user.email'), 'email'],
-          [sequelize.literal('task.description'), 'description']
+          [sequelize.literal('task.description'), 'description'],
+          [sequelize.literal('project.name'), 'project']
         ]
       },
       order: [[sequelize.literal('user.name')], [sequelize.literal('user.last_name')], ['start_time', 'desc']]
     })
   } else {
     console.log("user call");
+    let where = {
+      user_id: req.userId,
+      start_time: { [Op.between]: [start_time, end_time] },
+      status: 1
+    }
+    if (req.body.project) where.project_id = req.body.project
+
     row = await db.entries.findAll({
-      where: {
-        user_id: req.userId,
-        start_time: { [Op.between]: [start_time, end_time] },
-        status: 1
-      },
+      where,
       include: [{
         model: db.users,
         where: { active: 1 },
@@ -223,6 +251,11 @@ export const getReport = async (req, res) => {
         model: db.tasks,
         required: false,
         attributes: []
+      },
+      {
+        model: db.projects,
+        required: false,
+        attributes: []
       }],
       raw: true,
       attributes: {
@@ -230,7 +263,8 @@ export const getReport = async (req, res) => {
           [sequelize.literal('user.name'), 'name'],
           [sequelize.literal('user.last_name'), 'last_name'],
           [sequelize.literal('user.email'), 'email'],
-          [sequelize.literal('task.description'), 'description']
+          [sequelize.literal('task.description'), 'description'],
+          [sequelize.literal('project.name'), 'project']
         ]
       },
       order: [[sequelize.literal('user.name')], ['start_time', 'desc']]
@@ -280,7 +314,8 @@ export const getReport = async (req, res) => {
   worksheet.cell(1, 5).string("Clock in").style(hdColumnStyle);
   worksheet.cell(1, 6).string("Clock out").style(hdColumnStyle);
   worksheet.cell(1, 7).string("Total Hours").style(hdColumnStyle);
-  worksheet.cell(1, 8).string("Comments").style(hdColumnStyle);
+  worksheet.cell(1, 8).string("Project").style(hdColumnStyle);
+  worksheet.cell(1, 9).string("Comments").style(hdColumnStyle);
 
   let i = 2;
   row.forEach((element) => {
@@ -317,7 +352,11 @@ export const getReport = async (req, res) => {
       .cell(i, 7)
       .string(getTotalHours(element.start_time, element.end_time))
       .style(contColumnStyle);
-    worksheet.cell(i, 8).string(element.description).style({
+    worksheet
+      .cell(i, 8)
+      .string(element.project_id ? element.project : 'Unspecified')
+      .style(contColumnStyle);
+    worksheet.cell(i, 9).string(element.description).style({
       font: {
         name: "Arial",
         color: "#000000",
@@ -347,7 +386,7 @@ export const getReport = async (req, res) => {
             if (err) {
               console.error("error");
             } else {
-              console.log("eloo");
+              console.log("No hay error al borrar el archivo");
             }
           });
         }
@@ -366,13 +405,6 @@ export const getReport = async (req, res) => {
       // });
     }
   });
-  // worksheet.columns = [
-  //     { header: 'Id', key: 'id', width: 10},
-  //     { header: 'name', key: 'name', width: 32},
-  //     { header: 'hours', key: 'hours', width: 10}
-  // ]
-  // workbook.eachSheet(function(worksheer, 1))
-  // res.json('descargado')
 };
 // module.exports = {run: cronReport};
 
