@@ -185,7 +185,7 @@ export const createUser = async (req, res) => {
   userInfo.company = company;
   userInfo.employee = employee;
   delete userInfo.password
-  const user = await getUserInfo(id)
+  const user = await getUserInfo(userInfo.id)
   res.json(user);
 };
 
