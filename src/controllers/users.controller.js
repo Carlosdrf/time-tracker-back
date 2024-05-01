@@ -26,7 +26,7 @@ export const handleFilter = (items, filter) => {
   if (filter) {
     filterBy = [sequelize.literal("`roles->user_roles`.`role_id` = " + filter)];
   }
-  const filterExclude = [sequelize.literal("`roles->user_roles`.`role_id` <> 1")];
+  const filterExclude = [sequelize.literal("`roles->user_roles`.`role_id` <> 1 AND `users`.`active` = 1")];
   result[Op.and] = [...filterBy, ...filterExclude];
   return result;
 };
