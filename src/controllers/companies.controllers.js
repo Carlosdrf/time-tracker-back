@@ -1,5 +1,8 @@
+import { FilterGroup } from "@hubspot/api-client/lib/codegen/crm/contacts";
 import db, { sequelize } from "../../models";
 import roles from "../services/Role";
+import { AssociationTypes, Client } from "@hubspot/api-client";
+const hubspotClient = new Client({ accessToken: process.env.HUBSPOT_TOKEN })
 
 const errorMessage = "There was an error";
 
@@ -56,11 +59,68 @@ export const update = async (req, res) => {
 };
 
 export const createPossibleClient = async (req, res) => {
-  const { name, company, email, phone, positions, tasks_description } =
+  const { name, lastname, company, email, phone, positions, tasks_description } =
     req.body;
-  console.log(req.body);
-  res.json(req.body);
+  const contact = { properties: { email, phone, firstname: name, lastname } }
+  const companyObject = {
+    properties: {
+      name: company
+    }
+  }
+  try {
+    const contactExists = await validateContact(email)
+
+    if (contactExists.total == 0) {
+      const createdContact = await hubspotClient.crm.contacts.basicApi.create(contact)
+      const createdCompany = await hubspotClient.crm.companies.basicApi.create(companyObject)
+
+      await hubspotClient.crm.associations.v4.basicApi.create(
+        'companies',
+        createdCompany.id,
+        'contacts',
+        createdContact.id,
+        [
+          {
+            "associationCategory": "HUBSPOT_DEFINED",
+            "associationTypeId": AssociationTypes.companyToContact
+          }
+        ]
+      )
+
+      res.json({ message: "Success" });
+    } else {
+      res.status(400).json({ errorMessage })
+    }
+    // res.json(contactExists)
+  } catch (error) {
+    res.status(400).json('Error xd')
+  }
+
 };
+export const getContacts = async (req, res) => {
+  const contacts = await hubspotClient.crm.contacts.getAll()
+  res.json(contacts)
+}
+export const validateContact = async (email) => {
+  const publicObjectSearchRequest = {
+    filterGroups: [
+      {
+        filters: [
+          {
+            propertyName: 'email',
+            operator: 'EQ',
+            value: `${email}`
+          }
+        ]
+      }
+    ],
+    properties: ['createdate', 'firstname', 'lastname', 'email'],
+    limit: 100,
+    after: 0,
+  }
+  return await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest)
+}
+
 export const deleteCompany = async (req, res) => {
   try {
     const deleted = await db.companies.destroy({

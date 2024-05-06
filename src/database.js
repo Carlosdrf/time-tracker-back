@@ -1,6 +1,6 @@
+require('dotenv').config()
 import mysql from "mysql";
 import { promisify } from 'util';
-require('dotenv').config()
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,

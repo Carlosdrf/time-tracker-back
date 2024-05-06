@@ -1,5 +1,5 @@
-import "./database";
 import server from "./app";
+import "./database";
 import path from "path";
 
 const port = 3000;

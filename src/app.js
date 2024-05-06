@@ -13,9 +13,23 @@ import timezoneRoutes from "./routes/timezone.routes";
 import positionRoutes from "./routes/positions.routes";
 import notificationRoutes from './routes/notifications.routes'
 import projectRoutes from "./routes/projects.routes";
+
 import { createRoles, insertRoles } from "./libs/initialSetup";
 import cors from "cors";
 
+const routes = [
+  { path: 'entries', router: entriesRoutes },
+  { path: 'auth', router: authRoutes },
+  { path: 'reports', router: reportRoutes },
+  { path: 'stripe', router: stripeRoutes },
+  { path: 'users', router: userRoutes },
+  { path: 'roles', router: roleRoutes },
+  { path: 'companies', router: companyRoutes },
+  { path: 'timezones', router: timezoneRoutes },
+  { path: 'positions', router: positionRoutes },
+  { path: 'notifications', router: notificationRoutes },
+  { path: 'projects', router: projectRoutes },
+]
 const cron = require("node-cron");
 
 // const {run: cronReport} = require('./controllers/report.controller')
@@ -32,22 +46,10 @@ app.use(cors());
 
 app.use(morgan("dev"));
 app.use(
-  express.json({
-    verify: (req, res, buf) => {
-      req.rawBody = buf;
-    },
-  })
+  express.json()
 );
-app.use("/api/stripe", stripeRoutes);
-app.use("/api/entries", entriesRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/reports", reportRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/roles", roleRoutes);
-app.use("/api/companies", companyRoutes);
-app.use("/api/positions", positionRoutes);
-app.use("/api/timezones", timezoneRoutes);
-app.use("/api/notifications", notificationRoutes)
-app.use("/api/projects", projectRoutes)
+routes.forEach(route => {
+  app.use(`/api/${route.path}`, route.router)
+})
 
 export default server;
