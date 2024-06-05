@@ -17,7 +17,7 @@ if (config.use_env_variable) {
       host: config.host,
       port: config.port,
       dialect: config.dialect,
-      logging: false
+      // logging: false
     });
 }
 fs
@@ -49,7 +49,7 @@ const testconn = async () => {
   }
 
 }
-// sequelize.sync()
+sequelize.sync()
 
 testconn();
 

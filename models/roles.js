@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      roles.belongsToMany(models.users, {foreignKey: 'role_id', through: models.user_roles})
+      roles.belongsToMany(models.users, { foreignKey: 'role_id', through: models.user_roles })
     }
   }
   roles.init({
@@ -21,5 +21,12 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'roles',
     timestamps: false
   });
+
+  roles.addHook('afterSync', async () => {
+    const roleList = ['Admin', 'Employee', 'Employer'];
+    for (let role of roleList) {
+      await roles.findOrCreate({ where: { name: role } })
+    }
+  })
   return roles;
 };

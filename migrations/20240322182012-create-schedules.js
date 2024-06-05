@@ -18,10 +18,10 @@ module.exports = {
         onDelete: "CASCADE",
       },
       start_time: {
-        type: Sequelize.DATEONLY,
+        type: Sequelize.DATE,
       },
       end_time: {
-        type: Sequelize.DATEONLY,
+        type: Sequelize.DATE,
       },
       approved_by: {
         type: Sequelize.INTEGER,

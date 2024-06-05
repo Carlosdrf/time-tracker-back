@@ -2,6 +2,7 @@ import usersModel from "../services/User";
 const { Op } = require("sequelize");
 import db, { sequelize } from "../../models";
 import roleModel from "../services/Role";
+import moment from "moment";
 
 export const handleFilter = (items, filter) => {
   let searchBy = [];
@@ -80,38 +81,53 @@ export const getUsers = async (req, res) => {
   entriesReview.forEach((reviewUser) => {
     usersForReview.push(reviewUser.user_id);
   });
-  const usersFormatted = users.map((user) => {
-    let userFormat = {};
-    userFormat.id = user.id;
-    userFormat.name = user.name;
-    userFormat.last_name = user.last_name;
-    userFormat.email = user.email;
-    userFormat.role = user.role;
-    if (usersForReview.indexOf(user.id) != -1) {
-      userFormat.review = entriesReview.filter(
-        (entry) => user.id == entry.user_id
-      );
-    }
-    userFormat.active = user.active;
-    if (user['companies.id']) {
-      userFormat.company = {
-        id: user['companies.id'],
-        name: user['companies.name'],
-        description: user['companies.description'],
-        timezone: user['companies.timezone'],
-      };
-    }
-    if (user["employees.id"]) {
-      userFormat.employee = {
-        id: user["employees.company.id"],
-        company: user["employees.company.name"],
-        position: user["employees.position_id"],
-        position_name: user["employees.position.title"],
-        hourly_rate: user['employees.hourly_rate']
-      };
-    }
-    return userFormat;
-  });
+  const usersFormatted = await Promise.all(
+    users.map(async (user) => {
+      let userFormat = {};
+      userFormat.id = await user.id;
+      userFormat.name = user.name;
+      userFormat.last_name = user.last_name;
+      userFormat.email = user.email;
+      userFormat.role = user.role;
+      if (usersForReview.indexOf(user.id) != -1) {
+        userFormat.review = entriesReview.filter(
+          (entry) => user.id == entry.user_id
+        );
+      }
+      userFormat.active = user.active;
+      if (user['companies.id']) {
+        userFormat.company = {
+          id: user['companies.id'],
+          name: user['companies.name'],
+          description: user['companies.description'],
+          timezone: user['companies.timezone'],
+        };
+      }
+      if (user["employees.id"]) {
+        const schedules = await db.schedules.findAll({
+          include: [
+            {
+              model: db.employees,
+              where: { user_id: user.id }
+            },
+            {
+              model: db.days
+            }
+          ]
+        })
+
+        userFormat.employee = {
+          id: user["employees.company.id"],
+          company: user["employees.company.name"],
+          position: user["employees.position_id"],
+          position_name: user["employees.position.title"],
+          hourly_rate: user['employees.hourly_rate'],
+          schedule: schedules
+        };
+      }
+      return userFormat;
+    })
+  )
 
   res.json(usersFormatted);
 };
@@ -159,8 +175,9 @@ export const createUser = async (req, res) => {
       await db.employees.destroy({ where: { user_id: id } });
     }
     if (roleModel.USER_ROLE == role) {
+      let checkEmployee;
       if (employee.id != "") {
-        const checkEmployee = await db.employees.findOne({
+        checkEmployee = await db.employees.findOne({
           where: { user_id: id },
         });
         let employeeInfo = {
@@ -172,9 +189,24 @@ export const createUser = async (req, res) => {
           checkEmployee.company_id = employeeInfo.company_id
           await checkEmployee.save();
           await db.employees.update(employeeInfo, { where: { user_id: id } });
+        } else {
+          checkEmployee = await db.employees.create({ user_id: id, company_id: employee.id });
+        };
+        console.log(employee.schedule)
+        if (employee.schedule) {
+          for (let schedule of employee.schedule) {
+            let { startTime, endTime, days } = schedule
+            const newSchedule = await db.schedules.create({
+              start_time: await convertStrIntoTime(startTime),
+              end_time: await convertStrIntoTime(endTime),
+              employee_id: checkEmployee.id,
+              approved_by: req.userId,
+            })
+            for (let day of days) {
+              await db.schedules_days.create({ day_id: day.id, schedule_id: newSchedule.id })
+            }
+          }
         }
-        else
-          await db.employees.create({ user_id: id, company_id: employee.id });
       }
       await db.companies_users.destroy({ where: { user_id: id } });
     }
@@ -282,28 +314,13 @@ export const updateUser = async (req, res) => {
   res.json(req.body);
 };
 
-export const testEndpoint = async (req, res) => {
-  let user = await db.users.findOne({
-    where: { id: 33 },
-    include: [
-      {
-        model: db.roles,
-        required: false,
-        attributes: []
-      },
-    ],
-    attributes: {
-      include: [[sequelize.literal('`roles`.`id`'), 'role']]
-    }
-  })
-  const company = await user.getCompanies()
-  const employee = await user.getEmployees()
-  if (company.length > 0) user.dataValues.company = company[0]
-  if (employee.length > 0) user.dataValues.employee = {
-    id: employee[0].company_id,
-    position: employee[0].position_id,
-    hourly_rate: employee[0].hourly_rate,
+export const convertStrIntoTime = async (timeString) => {
+  const [time, modifier] = timeString.split(' ');
+  let [hours, minutes] = time.split(':').map(Number);
+  if (modifier.toLowerCase() == 'pm' && hours !== 12) {
+    hours += 12;
+  } else if (modifier.toLowerCase() == 'am' && hours === 12) {
+    hours = 0;
   }
-  console.log(user)
-  res.json(user)
+  return `${hours}:${minutes}:00`;
 }

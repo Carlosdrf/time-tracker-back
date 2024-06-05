@@ -15,6 +15,4 @@ router.get('/employees', [authJwt.verifyToken, authJwt.isEmployer], userControll
 
 router.post('/verifyusername', authJwt.verifyToken, userController.verifyUsername)
 
-router.get('/testin', userController.testEndpoint)
-
 export default router;

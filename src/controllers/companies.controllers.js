@@ -91,9 +91,8 @@ export const createPossibleClient = async (req, res) => {
     } else {
       res.status(400).json({ errorMessage })
     }
-    // res.json(contactExists)
   } catch (error) {
-    res.status(400).json('Error xd')
+    res.status(400).json('Error')
   }
 
 };
