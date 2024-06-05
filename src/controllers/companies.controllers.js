@@ -2,7 +2,7 @@ import { FilterGroup } from "@hubspot/api-client/lib/codegen/crm/contacts";
 import db, { sequelize } from "../../models";
 import roles from "../services/Role";
 import { AssociationTypes, Client } from "@hubspot/api-client";
-const hubspotClient = new Client({ accessToken: process.env.HUBSPOT_TOKEN })
+const hubspotClient = new Client({ accessToken: process.env.HUBSPOT_TOKEN });
 
 const errorMessage = "There was an error";
 
@@ -59,66 +59,90 @@ export const update = async (req, res) => {
 };
 
 export const createPossibleClient = async (req, res) => {
-  const { name, lastname, company, email, phone, positions, tasks_description } =
-    req.body;
-  const contact = { properties: { email, phone, firstname: name, lastname } }
+  const {
+    name,
+    lastname,
+    company,
+    email,
+    phone,
+    positions,
+    tasks_description,
+  } = req.body;
+  const contact = {
+    properties: {
+      email,
+      phone,
+      firstname: name,
+      worker_in_need: positions,
+      lastname,
+      hubspot_owner_id: "40000426",
+    },
+  };
   const companyObject = {
     properties: {
-      name: company
-    }
-  }
+      name: company,
+    },
+  };
   try {
-    const contactExists = await validateContact(email)
+    const contactExists = await validateContact(email);
 
     if (contactExists.total == 0) {
-      const createdContact = await hubspotClient.crm.contacts.basicApi.create(contact)
-      const createdCompany = await hubspotClient.crm.companies.basicApi.create(companyObject)
+      const createdContact = await hubspotClient.crm.contacts.basicApi.create(
+        contact
+      );
+      const createdCompany = await hubspotClient.crm.companies.basicApi.create(
+        companyObject
+      );
 
       await hubspotClient.crm.associations.v4.basicApi.create(
-        'companies',
+        "companies",
         createdCompany.id,
-        'contacts',
+        "contacts",
         createdContact.id,
         [
           {
-            "associationCategory": "HUBSPOT_DEFINED",
-            "associationTypeId": AssociationTypes.companyToContact
-          }
+            associationCategory: "HUBSPOT_DEFINED",
+            associationTypeId: AssociationTypes.companyToContact,
+          },
         ]
-      )
+      );
 
       res.json({ message: "Success" });
     } else {
-      res.status(400).json({ errorMessage })
+      res.status(400).json({ errorMessage });
     }
   } catch (error) {
-    res.status(400).json('Error')
+    console.log(error);
+    res.status(400).json(error.message);
   }
-
 };
 export const getContacts = async (req, res) => {
-  const contacts = await hubspotClient.crm.contacts.getAll()
-  res.json(contacts)
-}
+  const response = await hubspotClient.crm.owners.ownersApi.getPage();
+  const listaUsuarios = response;
+
+  res.json(listaUsuarios);
+};
 export const validateContact = async (email) => {
   const publicObjectSearchRequest = {
     filterGroups: [
       {
         filters: [
           {
-            propertyName: 'email',
-            operator: 'EQ',
-            value: `${email}`
-          }
-        ]
-      }
+            propertyName: "email",
+            operator: "EQ",
+            value: `${email}`,
+          },
+        ],
+      },
     ],
-    properties: ['createdate', 'firstname', 'lastname', 'email'],
+    properties: ["createdate", "firstname", "lastname", "email"],
     limit: 100,
     after: 0,
-  }
-  return await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest)
-}
+  };
+  return await hubspotClient.crm.contacts.searchApi.doSearch(
+    publicObjectSearchRequest
+  );
+};
 
 export const deleteCompany = async (req, res) => {
   try {
