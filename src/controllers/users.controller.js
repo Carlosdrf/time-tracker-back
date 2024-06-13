@@ -3,6 +3,7 @@ const { Op } = require("sequelize");
 import db, { sequelize } from "../../models";
 import roleModel from "../services/Role";
 import moment from "moment";
+import { Mailer } from "../services/Nodemailer";
 
 export const handleFilter = (items, filter) => {
   let searchBy = [];
@@ -192,13 +193,13 @@ export const createUser = async (req, res) => {
         } else {
           checkEmployee = await db.employees.create({ user_id: id, company_id: employee.id });
         };
-        console.log(employee.schedule)
         if (employee.schedule) {
+          await db.schedules.destroy({ where: { employee_id: checkEmployee.id } })
           for (let schedule of employee.schedule) {
-            let { startTime, endTime, days } = schedule
+            let { start_time, end_time, days } = schedule
             const newSchedule = await db.schedules.create({
-              start_time: await convertStrIntoTime(startTime),
-              end_time: await convertStrIntoTime(endTime),
+              start_time: await convertStrIntoTime(start_time),
+              end_time: await convertStrIntoTime(end_time),
               employee_id: checkEmployee.id,
               approved_by: req.userId,
             })
@@ -216,6 +217,7 @@ export const createUser = async (req, res) => {
   }
   userInfo.company = company;
   userInfo.employee = employee;
+
   delete userInfo.password
   const user = await getUserInfo(userInfo.id)
   res.json(user);
@@ -242,6 +244,13 @@ export const getUserInfo = async (userId) => {
     id: employee[0].company_id,
     position: employee[0].position_id,
     hourly_rate: employee[0].hourly_rate,
+    schedule: await db.schedules.findAll(
+      {
+        where: { employee_id: employee[0].id },
+        include: [{
+          model: db.days
+        }]
+      })
   }
   return user;
 }
@@ -264,6 +273,21 @@ export const createNewUser = async (req, userInfo) => {
     let company_id = req.body.employee.id;
     console.log(req.body)
     await db.employees.create({ user_id: user.dataValues.id, company_id, hourly_rate: req.body.employee.hourly_rate, position_id: req.body.employee.position });
+    if (employee.schedule) {
+      for (let schedule of employee.schedule) {
+        let { start_time, end_time, days } = schedule
+        await db.schedules.upsert()
+        const newSchedule = await db.schedules.create({
+          start_time: await convertStrIntoTime(start_time),
+          end_time: await convertStrIntoTime(end_time),
+          employee_id: checkEmployee.id,
+          approved_by: req.userId,
+        })
+        for (let day of days) {
+          await db.schedules_days.create({ day_id: day.id, schedule_id: newSchedule.id })
+        }
+      }
+    }
   }
   userInfo.id = user.dataValues.id;
   return userInfo;
@@ -315,12 +339,28 @@ export const updateUser = async (req, res) => {
 };
 
 export const convertStrIntoTime = async (timeString) => {
-  const [time, modifier] = timeString.split(' ');
-  let [hours, minutes] = time.split(':').map(Number);
-  if (modifier.toLowerCase() == 'pm' && hours !== 12) {
-    hours += 12;
-  } else if (modifier.toLowerCase() == 'am' && hours === 12) {
-    hours = 0;
+  console.log(timeString)
+  if (timeString.includes(' ')) {
+    const [time, modifier] = timeString.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (modifier.toLowerCase() == 'pm' && hours !== 12) {
+      hours += 12;
+    } else if (modifier.toLowerCase() == 'am' && hours === 12) {
+      hours = 0;
+    }
+    return `${hours}:${minutes}:00`;
   }
-  return `${hours}:${minutes}:00`;
+  return timeString
+}
+
+export const createPossibleTeamMember = async (req, res) => {
+  const { name, lastname, email, phone, englishLevel, resume } = req.body
+
+  try {
+    await Mailer.sendMail(req)
+    res.status(200).json(true)
+  } catch (err) {
+    res.status(400).json(err)
+  }
+
 }

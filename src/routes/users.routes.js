@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { authJwt } from "../middlewares";
+import multer from 'multer'
 import * as userController from "../controllers/users.controller";
 const router = Router()
+const upload = multer({ dest: 'uploads/' })
 
 router.post('/', authJwt.verifyToken, userController.getUsers)
 
@@ -14,5 +16,7 @@ router.delete('/:id', authJwt.verifyToken, userController.deleteUser)
 router.get('/employees', [authJwt.verifyToken, authJwt.isEmployer], userController.getEmployees)
 
 router.post('/verifyusername', authJwt.verifyToken, userController.verifyUsername)
+
+router.post('/create/possible', upload.single('resume'), userController.createPossibleTeamMember);
 
 export default router;

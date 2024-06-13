@@ -22,13 +22,21 @@ export const report = async function cronReport() {
 };
 
 export const getRange = async (req, res) => {
+  console.log(req.body)
+  const {
+    user,
+    company,
+    byClient,
+    useTimezone,
+    project
+  } = req.body;
   const end_time = await format.UTCend(req.body.lastSelect);
   const start_time = await format.UTCStart(req.body.firstSelect);
   const dateRange = {
     start_time: new Date(req.body.firstSelect),
     end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
   };
-  if (req.role == roleModel.ADMIN_ROLE && req.body.user_id == null) {
+  if (req.role == roleModel.ADMIN_ROLE && user == 'all' && company == 'all') {
     console.log('admin and no user provided')
     const row = await db.entries.findAll({
       include: [{
@@ -36,33 +44,44 @@ export const getRange = async (req, res) => {
         attributes: [],
         where: { active: 1 }
       }],
-      where: { status: 1, start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] } },
+      where: {
+        status: 1,
+        start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+      },
     })
     res.json(row);
   } else if (
     (req.role == roleModel.ADMIN_ROLE || req.role == roleModel.EMPLOYER_ROLE) &&
-    req.body.user_id != null
+    (company.id != null || user.id != null)
   ) {
     let row;
 
-    console.log('client/admin with a user id provided')
-    const where = { status: 1, user_id: req.body.user_id, start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] } }
-    if (req.body.role == 2) {
+    console.log('client/admin with a user/client id provided')
+    const where = {
+      status: 1,
+      user_id: user.id,
+      start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+    }
+    if (!byClient) {
+      console.log('client false')
       row = await db.entries.findAll({
         where: where,
       })
     } else {
+      console.log('client true')
       // if there's a role received from the front end and the role is equal to employer type it will look for their employees
       // const { company_id } = await db.companies_users.findOne({ where: { company_id: req.body.id } })
-      const employees = await db.employees.findAll({ where: { company_id: req.body.user_id } })
+      const employees = await db.employees.findAll({ where: { company_id: company.id } })
       const ids = employees.map((employee, i) => employee.user_id);
       row = await db.entries.findAll({
-        where: { user_id: ids, status: 1 },
-        start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+        where: {
+          user_id: ids, status: 1,
+          start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+        },
       })
     }
     res.json(row);
-  } else if (req.role == roleModel.EMPLOYER_ROLE && req.body.user_id == null) {
+  } else if (req.role == roleModel.EMPLOYER_ROLE && user == 'all') {
     console.log('client with no user id provided')
     const { company_id } = await db.companies_users.findOne({
       where: { user_id: req.userId },
@@ -87,10 +106,18 @@ export const getRange = async (req, res) => {
     });
     res.json(entries);
   } else {
-    const row = await db.entries.findAll({ where: { user_id: req.userId, start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] } } });
+    console.log('else')
+    const row = await db.entries.findAll({
+      where: {
+        user_id: req.userId,
+        start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+      }
+    });
     res.json(row);
   }
 };
+
+
 export const getReport = async (req, res) => {
   const start_time = new Date(req.body.firstSelect);
   const end_time = new Date(new Date(req.body.lastSelect).setHours(23, 59, 59));
