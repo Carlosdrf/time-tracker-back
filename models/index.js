@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config()
 const Sequelize = require('sequelize');
 const process = require('process');
 const basename = path.basename(__filename);
@@ -49,7 +50,7 @@ const testconn = async () => {
   }
 
 }
-sequelize.sync()
+// sequelize.sync()
 
 testconn();
 

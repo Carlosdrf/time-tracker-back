@@ -381,10 +381,8 @@ export const getReport = async (req, res) => {
         }
       ]
     })
-    // console.log(companyData.timezone)
-    // timezone = getOffset(companyData.timezone);
-    // console.log(timezone)
-    // console.log(element)
+    timezone = useTimezone ? companyData.timezone.split(':')[0] ?? req.body.timezone ?? 'America/Caracas' : req.body.timezone
+
     worksheet.cell(i, 1).string(element.name + " " + element.last_name).style({
       font: {
         name: "Arial",
@@ -396,23 +394,23 @@ export const getReport = async (req, res) => {
 
     worksheet
       .cell(i, 3)
-      .string(moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('dddd'))
+      .string(moment(new Date(element.start_time)).tz(timezone).format('dddd'))
       .style(contColumnStyle);
     worksheet
       .cell(i, 4)
       .string(
-        moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('YYYY-MM-DD')
+        moment(new Date(element.start_time)).tz(timezone).format('YYYY-MM-DD')
       )
       .style(contColumnStyle);
     worksheet
       .cell(i, 5)
       .string(
-        moment(new Date(element.start_time)).utcOffset(-req.body.timezone).format('HH:mm:ss')
+        moment(new Date(element.start_time)).tz(timezone).format('HH:mm:ss')
       )
       .style(contColumnStyle);
     worksheet
       .cell(i, 6)
-      .string(moment(new Date(element.end_time)).utcOffset(-req.body.timezone).format('HH:mm:ss'))
+      .string(moment(new Date(element.end_time)).tz(timezone).format('HH:mm:ss'))
       .style(contColumnStyle);
     worksheet
       .cell(i, 7)
@@ -486,28 +484,4 @@ function getTotalHours(start_time, end_time) {
 
 function padZero(num) {
   return num < 10 ? `0${num}` : `${num}`;
-}
-
-const getOffset = (timezoneStr) => {
-  const [timezone, lang] = timezoneStr.split(':')
-  console.log(lang)
-  const now = new Date()
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    timeZoneName: 'short'
-  })
-  const parts = formatter.formatToParts(now)
-  console.log(parts)
-  const offsetPart = parts.find(part => part.type == 'timeZoneName');
-  const offsetString = offsetPart.value;
-  console.log(offsetString)
-
-  const offsetMatch = offsetString.match(/GMT([+-]\d{2})(\d{2})?/);
-  if (!offsetMatch) {
-    throw new Error('Invalid timezone offset format');
-  }
-
-  const hours = parseInt(offsetMatch[1], 10);
-  const minutes = offsetMatch[2] ? parseInt(offsetMatch[2], 10) : 0;
-  return hours * 60 + minutes;
 }
