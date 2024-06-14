@@ -36,7 +36,14 @@ export const getRange = async (req, res) => {
     start_time: new Date(req.body.firstSelect),
     end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
   };
+  let where;
   if (req.role == roleModel.ADMIN_ROLE && user == 'all' && company == 'all') {
+    where = {
+      status: 1,
+      start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+    }
+    if (project != 'all') where.project_id = project.id
+    console.log(where)
     console.log('admin and no user provided')
     const row = await db.entries.findAll({
       include: [{
@@ -44,40 +51,40 @@ export const getRange = async (req, res) => {
         attributes: [],
         where: { active: 1 }
       }],
-      where: {
-        status: 1,
-        start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
-      },
-    })
+      where,
+    });
     res.json(row);
   } else if (
     (req.role == roleModel.ADMIN_ROLE || req.role == roleModel.EMPLOYER_ROLE) &&
     (company.id != null || user.id != null)
   ) {
     let row;
-
     console.log('client/admin with a user/client id provided')
-    const where = {
+    where = {
       status: 1,
       user_id: user.id,
       start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
     }
+    if (project != 'all') where.project_id = project.id
+
     if (!byClient) {
-      console.log('client false')
       row = await db.entries.findAll({
-        where: where,
+        where,
       })
     } else {
-      console.log('client true')
       // if there's a role received from the front end and the role is equal to employer type it will look for their employees
       // const { company_id } = await db.companies_users.findOne({ where: { company_id: req.body.id } })
       const employees = await db.employees.findAll({ where: { company_id: company.id } })
       const ids = employees.map((employee, i) => employee.user_id);
+
+      where = {
+        user_id: ids, status: 1,
+        start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+      }
+      if (project != 'all') where.project_id = project.id
+
       row = await db.entries.findAll({
-        where: {
-          user_id: ids, status: 1,
-          start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
-        },
+        where,
       })
     }
     res.json(row);
@@ -101,17 +108,24 @@ export const getRange = async (req, res) => {
     employees.forEach((item, i) => {
       users_id[i] = item.dataValues.user_id
     });
+
+    where = { start_time: { [Op.between]: [start_time, end_time] }, user_id: users_id }
+    if (project != 'all') where.project_id = project.id
+
     const entries = await db.entries.findAll({
-      where: { start_time: { [Op.between]: [start_time, end_time] }, user_id: users_id },
+      where,
     });
     res.json(entries);
   } else {
     console.log('else')
+    where = {
+      user_id: req.userId,
+      start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
+    }
+    if (project != 'all') where.project_id = project.id
+
     const row = await db.entries.findAll({
-      where: {
-        user_id: req.userId,
-        start_time: { [Op.between]: [dateRange.start_time, dateRange.end_time] }
-      }
+      where,
     });
     res.json(row);
   }
@@ -119,12 +133,20 @@ export const getRange = async (req, res) => {
 
 
 export const getReport = async (req, res) => {
+  const {
+    user,
+    company,
+    project,
+    useTimezone,
+    byClient
+  } = req.body
+
+  let where;
+
+  console.log(req.body)
+
   const start_time = new Date(req.body.firstSelect);
   const end_time = new Date(new Date(req.body.lastSelect).setHours(23, 59, 59));
-  const dateRange = {
-    start_time: new Date(req.body.firstSelect),
-    end_time: new Date(new Date(req.body.lastSelect).setHours(23, 59, 59))
-  };
 
   const workbook = new excel.Workbook();
   let nombreArchivo = "report i-nimble";
@@ -132,13 +154,16 @@ export const getReport = async (req, res) => {
   var worksheet = workbook.addWorksheet(nombreArchivo);
 
   let row;
-  if (req.role == 1 && req.body.user_id == null) {
+  if (req.role == 1 && user.id == null && company.id == null) {
     console.log('admin and no user id provided')
-    let where = {
+    // if(useTimezone) timezone = 
+    // console.log(timezone)
+
+    where = {
       start_time: { [Op.between]: [start_time, end_time] },
       status: 1,
     }
-    if (req.body.project) where.project_id = req.body.project
+    if (project.id) where.project_id = project.id
     row = await db.entries.findAll({
       where,
       include: [{
@@ -168,23 +193,23 @@ export const getReport = async (req, res) => {
       },
       order: [[sequelize.literal('user.name')], [sequelize.literal('user.last_name')], ['start_time', 'desc']]
     })
-  } else if (req.role != 2 && req.body.user_id != null) {
-    console.log('admin/client and user id provided')
-    let where = {
+  } else if (req.role != 2 && (user.id != null || company.id != null)) {
+    console.log('admin/client and user/client provided')
+    where = {
       start_time: { [Op.between]: [start_time, end_time] },
       status: 1
     }
-    if (req.body.project) where.project_id = req.body.project
+    if (project.id) where.project_id = project.id
 
-    if (req.body.role == 2) {
-      where.user_id = req.body.user_id
+    if (!byClient) {
+      where.user_id = user.id
     } else {
-      const employees = await db.employees.findAll({ where: { company_id: req.body.user_id } })
+      const employees = await db.employees.findAll({ where: { company_id: company.id } })
       const ids = employees.map((employee, i) => employee.user_id);
       where.user_id = ids
     }
 
-    row = await await db.entries.findAll({
+    row = await db.entries.findAll({
       where,
       include: [{
         model: db.users,
@@ -265,7 +290,7 @@ export const getReport = async (req, res) => {
       start_time: { [Op.between]: [start_time, end_time] },
       status: 1
     }
-    if (req.body.project) where.project_id = req.body.project
+    if (project.id) where.project_id = project.id
 
     row = await db.entries.findAll({
       where,
@@ -345,7 +370,21 @@ export const getReport = async (req, res) => {
   worksheet.cell(1, 9).string("Comments").style(hdColumnStyle);
 
   let i = 2;
-  row.forEach((element) => {
+  let timezone;
+  let companyData;
+  for (let element of row) {
+    if (useTimezone) companyData = await db.companies.findOne({
+      include: [
+        {
+          model: db.employees,
+          where: { user_id: element.user_id }
+        }
+      ]
+    })
+    // console.log(companyData.timezone)
+    // timezone = getOffset(companyData.timezone);
+    // console.log(timezone)
+    // console.log(element)
     worksheet.cell(i, 1).string(element.name + " " + element.last_name).style({
       font: {
         name: "Arial",
@@ -392,7 +431,7 @@ export const getReport = async (req, res) => {
       },
     });
     i++;
-  });
+  };
   // ruta donde se guardara
   const xlPath = path.join(__dirname, "../../excel", nombreArchivo + ".xlsx");
   // escribir
@@ -447,4 +486,28 @@ function getTotalHours(start_time, end_time) {
 
 function padZero(num) {
   return num < 10 ? `0${num}` : `${num}`;
+}
+
+const getOffset = (timezoneStr) => {
+  const [timezone, lang] = timezoneStr.split(':')
+  console.log(lang)
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    timeZoneName: 'short'
+  })
+  const parts = formatter.formatToParts(now)
+  console.log(parts)
+  const offsetPart = parts.find(part => part.type == 'timeZoneName');
+  const offsetString = offsetPart.value;
+  console.log(offsetString)
+
+  const offsetMatch = offsetString.match(/GMT([+-]\d{2})(\d{2})?/);
+  if (!offsetMatch) {
+    throw new Error('Invalid timezone offset format');
+  }
+
+  const hours = parseInt(offsetMatch[1], 10);
+  const minutes = offsetMatch[2] ? parseInt(offsetMatch[2], 10) : 0;
+  return hours * 60 + minutes;
 }
