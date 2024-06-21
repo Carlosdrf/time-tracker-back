@@ -383,6 +383,7 @@ export const getReport = async (req, res) => {
     })
     timezone = useTimezone ? companyData.timezone.split(':')[0] ?? req.body.timezone ?? 'America/Caracas' : req.body.timezone
 
+    console.log(timezone)
     worksheet.cell(i, 1).string(element.name + " " + element.last_name).style({
       font: {
         name: "Arial",

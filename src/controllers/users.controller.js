@@ -256,6 +256,7 @@ export const getUserInfo = async (userId) => {
 }
 
 export const createNewUser = async (req, userInfo) => {
+  const { employee } = req.body
   const user = await db.users.create(userInfo);
   await db.user_roles.create({
     user_id: user.dataValues.id,
