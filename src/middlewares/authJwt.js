@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import config from "../config";
 import roleModel from "../services/Role";
+import userModel from "../services/User";
 import db from "../../models";
 
 export const verifyToken = async (req, res, next) => {
@@ -46,3 +47,24 @@ export const isEmployer = async (req, res, next) => {
   }
   return res.status(403).json({ message: "Wrong role" });
 };
+
+export const validToken = async (req, res, next) => {
+  const { code } = req.params;
+
+  const authentications = await db.authentications.findAll();
+  const match = authentications.find(auth => userModel.verifyHash(code, auth.token, auth.salt));
+
+  if (match) {
+    const diff = new Date().getTime() - match.createdAt.getTime();
+
+    const minutes = Math.floor((diff / 1000 / 60) % 60);
+    const hours = Math.floor((diff / 1000 / 60 / 60));
+
+    if (minutes < 15 && hours === 0) {
+      return next();
+    }
+
+    return res.status(403).json('token might be expired');
+  }
+  res.status(404).json('could not find specified token');
+}

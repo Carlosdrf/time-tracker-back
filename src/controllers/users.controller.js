@@ -9,6 +9,7 @@ export const handleFilter = (items, filter) => {
   let searchBy = [];
   let filterBy = [];
   let result = {};
+
   items.forEach((item) => {
     if (item !== "")
       searchBy.push(
@@ -24,17 +25,22 @@ export const handleFilter = (items, filter) => {
         }
       );
   });
+  
   if (searchBy.length > 0) result[Op.or] = searchBy;
-  if (filter) {
-    filterBy = [sequelize.literal("`roles->user_roles`.`role_id` = " + filter)];
+  if (filter.role) {
+    filterBy.push(sequelize.literal("`roles->user_roles`.`role_id` = " + filter.role))
   }
-  const filterExclude = [sequelize.literal("`roles->user_roles`.`role_id` <> 1 AND `users`.`active` = 1")];
+  if (filter.status !== undefined) {
+    const status = filter.status ? 1 : 0;
+    filterBy.push(sequelize.literal("`users`.`active` = " + status));
+  }
+  const filterExclude = [sequelize.literal("`roles->user_roles`.`role_id` <> 1")];
   result[Op.and] = [...filterBy, ...filterExclude];
   return result;
 };
 export const getUsers = async (req, res) => {
   const { searchField, filter } = req.body;
-  // const token = await genNewToken(req)
+
   let searchQuery;
   if (searchField != null)
     searchQuery = handleFilter(searchField.split(" "), filter);
@@ -134,7 +140,6 @@ export const getUsers = async (req, res) => {
 };
 
 export const createUser = async (req, res) => {
-  console.log(req.body);
   const { id, name, last_name, password, email, role, company, employee, active } =
     req.body;
   if (id == "-1") {
@@ -272,7 +277,7 @@ export const createNewUser = async (req, userInfo) => {
 
   } else if (roleModel.USER_ROLE == userInfo.role && req.body.employee.id) {
     let company_id = req.body.employee.id;
-    console.log(req.body)
+
     await db.employees.create({ user_id: user.dataValues.id, company_id, hourly_rate: req.body.employee.hourly_rate, position_id: req.body.employee.position });
     if (employee.schedule) {
       for (let schedule of employee.schedule) {
@@ -319,7 +324,7 @@ export const getEmployees = async (req, res) => {
 
 export const verifyUsername = async (req, res) => {
   const { email, userId } = req.body;
-  console.log(email);
+
   const userExists = await db.users.findOne({
     where: { email, id: { [Op.ne]: userId } },
   });
@@ -340,7 +345,6 @@ export const updateUser = async (req, res) => {
 };
 
 export const convertStrIntoTime = async (timeString) => {
-  console.log(timeString)
   if (timeString.includes(' ')) {
     const [time, modifier] = timeString.split(' ');
     let [hours, minutes] = time.split(':').map(Number);
@@ -355,8 +359,6 @@ export const convertStrIntoTime = async (timeString) => {
 }
 
 export const createPossibleTeamMember = async (req, res) => {
-  const { name, lastname, email, phone, englishLevel, resume } = req.body
-
   try {
     await Mailer.sendMail(req)
     res.status(200).json(true)

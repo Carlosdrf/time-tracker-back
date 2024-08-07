@@ -50,7 +50,7 @@ const testconn = async () => {
   }
 
 }
-// sequelize.sync()
+sequelize.sync()
 
 testconn();
 
