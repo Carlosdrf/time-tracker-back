@@ -5,11 +5,11 @@ import { checkUser, authJwt } from '../middlewares';
 
 router.post('/signup/:code', [authJwt.validToken], authController.noResponse);
 
-router.post('/signin', authController.signin);
+router.post('/signin', checkUser.verifyUser, authController.signin);
 
 router.post(
     '/generate',
-    // authJwt.isAdmin,
+    authJwt.isAdmin,
     authController.generateUserCode,
 );
 
