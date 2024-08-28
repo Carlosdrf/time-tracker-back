@@ -2,11 +2,14 @@ import usersModel from "../services/User";
 const { Op } = require("sequelize");
 import db, { sequelize } from "../../models";
 import roleModel from "../services/Role";
+import moment from "moment";
+import { Mailer } from "../services/Nodemailer";
 
 export const handleFilter = (items, filter) => {
   let searchBy = [];
   let filterBy = [];
   let result = {};
+
   items.forEach((item) => {
     if (item !== "")
       searchBy.push(
@@ -22,17 +25,22 @@ export const handleFilter = (items, filter) => {
         }
       );
   });
+  
   if (searchBy.length > 0) result[Op.or] = searchBy;
-  if (filter) {
-    filterBy = [sequelize.literal("`roles->user_roles`.`role_id` = " + filter)];
+  if (filter.role) {
+    filterBy.push(sequelize.literal("`roles->user_roles`.`role_id` = " + filter.role))
   }
-  const filterExclude = [sequelize.literal("`roles->user_roles`.`role_id` <> 1 AND `users`.`active` = 1")];
+  if (filter.status !== undefined) {
+    const status = filter.status ? 1 : 0;
+    filterBy.push(sequelize.literal("`users`.`active` = " + status));
+  }
+  const filterExclude = [sequelize.literal("`roles->user_roles`.`role_id` <> 1")];
   result[Op.and] = [...filterBy, ...filterExclude];
   return result;
 };
 export const getUsers = async (req, res) => {
   const { searchField, filter } = req.body;
-  // const token = await genNewToken(req)
+
   let searchQuery;
   if (searchField != null)
     searchQuery = handleFilter(searchField.split(" "), filter);
@@ -80,44 +88,58 @@ export const getUsers = async (req, res) => {
   entriesReview.forEach((reviewUser) => {
     usersForReview.push(reviewUser.user_id);
   });
-  const usersFormatted = users.map((user) => {
-    let userFormat = {};
-    userFormat.id = user.id;
-    userFormat.name = user.name;
-    userFormat.last_name = user.last_name;
-    userFormat.email = user.email;
-    userFormat.role = user.role;
-    if (usersForReview.indexOf(user.id) != -1) {
-      userFormat.review = entriesReview.filter(
-        (entry) => user.id == entry.user_id
-      );
-    }
-    userFormat.active = user.active;
-    if (user['companies.id']) {
-      userFormat.company = {
-        id: user['companies.id'],
-        name: user['companies.name'],
-        description: user['companies.description'],
-        timezone: user['companies.timezone'],
-      };
-    }
-    if (user["employees.id"]) {
-      userFormat.employee = {
-        id: user["employees.company.id"],
-        company: user["employees.company.name"],
-        position: user["employees.position_id"],
-        position_name: user["employees.position.title"],
-        hourly_rate: user['employees.hourly_rate']
-      };
-    }
-    return userFormat;
-  });
+  const usersFormatted = await Promise.all(
+    users.map(async (user) => {
+      let userFormat = {};
+      userFormat.id = await user.id;
+      userFormat.name = user.name;
+      userFormat.last_name = user.last_name;
+      userFormat.email = user.email;
+      userFormat.role = user.role;
+      if (usersForReview.indexOf(user.id) != -1) {
+        userFormat.review = entriesReview.filter(
+          (entry) => user.id == entry.user_id
+        );
+      }
+      userFormat.active = user.active;
+      if (user['companies.id']) {
+        userFormat.company = {
+          id: user['companies.id'],
+          name: user['companies.name'],
+          description: user['companies.description'],
+          timezone: user['companies.timezone'],
+        };
+      }
+      if (user["employees.id"]) {
+        const schedules = await db.schedules.findAll({
+          include: [
+            {
+              model: db.employees,
+              where: { user_id: user.id }
+            },
+            {
+              model: db.days
+            }
+          ]
+        })
+
+        userFormat.employee = {
+          id: user["employees.company.id"],
+          company: user["employees.company.name"],
+          position: user["employees.position_id"],
+          position_name: user["employees.position.title"],
+          hourly_rate: user['employees.hourly_rate'],
+          schedule: schedules
+        };
+      }
+      return userFormat;
+    })
+  )
 
   res.json(usersFormatted);
 };
 
 export const createUser = async (req, res) => {
-  console.log(req.body);
   const { id, name, last_name, password, email, role, company, employee, active } =
     req.body;
   if (id == "-1") {
@@ -159,8 +181,9 @@ export const createUser = async (req, res) => {
       await db.employees.destroy({ where: { user_id: id } });
     }
     if (roleModel.USER_ROLE == role) {
+      let checkEmployee;
       if (employee.id != "") {
-        const checkEmployee = await db.employees.findOne({
+        checkEmployee = await db.employees.findOne({
           where: { user_id: id },
         });
         let employeeInfo = {
@@ -172,9 +195,24 @@ export const createUser = async (req, res) => {
           checkEmployee.company_id = employeeInfo.company_id
           await checkEmployee.save();
           await db.employees.update(employeeInfo, { where: { user_id: id } });
+        } else {
+          checkEmployee = await db.employees.create({ user_id: id, company_id: employee.id });
+        };
+        if (employee.schedule) {
+          await db.schedules.destroy({ where: { employee_id: checkEmployee.id } })
+          for (let schedule of employee.schedule) {
+            let { start_time, end_time, days } = schedule
+            const newSchedule = await db.schedules.create({
+              start_time: await convertStrIntoTime(start_time),
+              end_time: await convertStrIntoTime(end_time),
+              employee_id: checkEmployee.id,
+              approved_by: req.userId,
+            })
+            for (let day of days) {
+              await db.schedules_days.create({ day_id: day.id, schedule_id: newSchedule.id })
+            }
+          }
         }
-        else
-          await db.employees.create({ user_id: id, company_id: employee.id });
       }
       await db.companies_users.destroy({ where: { user_id: id } });
     }
@@ -184,6 +222,7 @@ export const createUser = async (req, res) => {
   }
   userInfo.company = company;
   userInfo.employee = employee;
+
   delete userInfo.password
   const user = await getUserInfo(userInfo.id)
   res.json(user);
@@ -210,11 +249,19 @@ export const getUserInfo = async (userId) => {
     id: employee[0].company_id,
     position: employee[0].position_id,
     hourly_rate: employee[0].hourly_rate,
+    schedule: await db.schedules.findAll(
+      {
+        where: { employee_id: employee[0].id },
+        include: [{
+          model: db.days
+        }]
+      })
   }
   return user;
 }
 
 export const createNewUser = async (req, userInfo) => {
+  const { employee } = req.body
   const user = await db.users.create(userInfo);
   await db.user_roles.create({
     user_id: user.dataValues.id,
@@ -230,8 +277,23 @@ export const createNewUser = async (req, userInfo) => {
 
   } else if (roleModel.USER_ROLE == userInfo.role && req.body.employee.id) {
     let company_id = req.body.employee.id;
-    console.log(req.body)
+
     await db.employees.create({ user_id: user.dataValues.id, company_id, hourly_rate: req.body.employee.hourly_rate, position_id: req.body.employee.position });
+    if (employee.schedule) {
+      for (let schedule of employee.schedule) {
+        let { start_time, end_time, days } = schedule
+        await db.schedules.upsert()
+        const newSchedule = await db.schedules.create({
+          start_time: await convertStrIntoTime(start_time),
+          end_time: await convertStrIntoTime(end_time),
+          employee_id: checkEmployee.id,
+          approved_by: req.userId,
+        })
+        for (let day of days) {
+          await db.schedules_days.create({ day_id: day.id, schedule_id: newSchedule.id })
+        }
+      }
+    }
   }
   userInfo.id = user.dataValues.id;
   return userInfo;
@@ -262,7 +324,7 @@ export const getEmployees = async (req, res) => {
 
 export const verifyUsername = async (req, res) => {
   const { email, userId } = req.body;
-  console.log(email);
+
   const userExists = await db.users.findOne({
     where: { email, id: { [Op.ne]: userId } },
   });
@@ -282,28 +344,26 @@ export const updateUser = async (req, res) => {
   res.json(req.body);
 };
 
-export const testEndpoint = async (req, res) => {
-  let user = await db.users.findOne({
-    where: { id: 33 },
-    include: [
-      {
-        model: db.roles,
-        required: false,
-        attributes: []
-      },
-    ],
-    attributes: {
-      include: [[sequelize.literal('`roles`.`id`'), 'role']]
+export const convertStrIntoTime = async (timeString) => {
+  if (timeString.includes(' ')) {
+    const [time, modifier] = timeString.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (modifier.toLowerCase() == 'pm' && hours !== 12) {
+      hours += 12;
+    } else if (modifier.toLowerCase() == 'am' && hours === 12) {
+      hours = 0;
     }
-  })
-  const company = await user.getCompanies()
-  const employee = await user.getEmployees()
-  if (company.length > 0) user.dataValues.company = company[0]
-  if (employee.length > 0) user.dataValues.employee = {
-    id: employee[0].company_id,
-    position: employee[0].position_id,
-    hourly_rate: employee[0].hourly_rate,
+    return `${hours}:${minutes}:00`;
   }
-  console.log(user)
-  res.json(user)
+  return timeString
+}
+
+export const createPossibleTeamMember = async (req, res) => {
+  try {
+    await Mailer.sendMail(req)
+    res.status(200).json(true)
+  } catch (err) {
+    res.status(400).json(err)
+  }
+
 }

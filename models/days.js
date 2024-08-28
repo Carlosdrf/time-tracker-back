@@ -9,12 +9,12 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Days.hasMany(models.schedules_days, {foreignKey: 'day_id'})
+      Days.belongsToMany(models.schedules, { foreignKey: 'day_id', through: 'schedules_days' })
     }
   }
   Days.init(
     {
-      day: DataTypes.STRING,
+      name: DataTypes.STRING,
     },
     {
       sequelize,
@@ -22,5 +22,13 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: false,
     }
   );
+
+  Days.addHook('afterSync', async (options) => {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    for (const day of days) {
+      await Days.findOrCreate({ where: { name: day } });
+    }
+  })
+
   return Days;
 };

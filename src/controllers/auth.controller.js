@@ -12,7 +12,7 @@ export const signUp = async (req, res) => {
         last_name,
         email,
         password: await userModel.encryptPass(password),
-        last_active: moment().format('YYYY-MM-DD HH:mm:ss')
+        last_active: moment().format('YYYY-MM-DD HH:mm:ss'),
     })
     const savedUser = await db.users.create(newUser)
     await roleModel.assignRole(savedUser.id);
@@ -22,12 +22,12 @@ export const signUp = async (req, res) => {
         const token = jwt.sign({ id: savedUser.id, role: role.id }, config.SECRET, {
             expiresIn: 86400
         })
-        const username = user.name
-        const role_id = role.id
-        const email = user.email
-        res.json({ token, username, role_id, email })
+        const username = user.name;
+        const role_id = role.id;
+        const email = user.email;
+        res.json({ token, username, role_id, email });
     } else {
-        res.status(404).json('There was a problem')
+        res.status(404).json('There was a problem');
     }
 }
 
@@ -54,4 +54,26 @@ export const signin = async (req, res) => {
     const email = user.email
 
     res.json({ token, username, role_id, email })
+}
+
+export const generateUserCode = async (req, res) => {
+    const activationCode = userModel.generateString(16);
+
+    const { hash, salt } = userModel.generateHash(activationCode);
+
+    db.authentications.create({ token: hash, salt });
+
+    res.json(`${process.env.FRONT_URL}/create/${activationCode}`);
+}
+
+export const validateHash = async (req, res) => {
+    const { code } = req.params;
+    const authentications = await db.authentications.findAll();
+    const match = authentications.find(auth => userModel.verifyHash(code, auth.token, auth.salt));
+
+    res.json(match ? true : false);
+}
+
+export const noResponse = async (req, res)=>{
+    res.json('')
 }

@@ -85,6 +85,7 @@ export const createPossibleClient = async (req, res) => {
   };
   try {
     const contactExists = await validateContact(email);
+    console.log(contactExists)
 
     if (contactExists.total == 0) {
       const createdContact = await hubspotClient.crm.contacts.basicApi.create(
@@ -109,13 +110,14 @@ export const createPossibleClient = async (req, res) => {
 
       res.json({ message: "Success" });
     } else {
-      res.status(400).json({ errorMessage });
+      res.status(409).json({ errorMessage: `You are already subscribed, we'll reach out soon` });
     }
   } catch (error) {
     console.log(error);
     res.status(400).json(error.message);
   }
 };
+
 export const getContacts = async (req, res) => {
   const response = await hubspotClient.crm.owners.ownersApi.getPage();
   const listaUsuarios = response;
@@ -123,6 +125,7 @@ export const getContacts = async (req, res) => {
   res.json(listaUsuarios);
 };
 export const validateContact = async (email) => {
+  console.log('q pasa')
   const publicObjectSearchRequest = {
     filterGroups: [
       {

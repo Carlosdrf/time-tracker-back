@@ -91,21 +91,27 @@ export const update = async (req, res) => {
 }
 
 export const deleteProject = async (req, res) => {
-    if (req.role == roles.EMPLOYER_ROLE) {
-        const user = await db.users.findByPk(req.userId)
-        const [company] = await user.getCompanies()
-        const projects = await db.projects.findOne({
-            where: {
-                id: req.params.id,
-                company_id: company.id
-            }
-        })
-        if (!projects) return res.status(400).json({
-            message: "Can't delete this projects, you're not the owner"
-        });
-    }
-    const deleted = await db.projects.destroy({ where: { id: req.params.id } })
+    try {
+        if (req.role == roles.EMPLOYER_ROLE) {
+            const user = await db.users.findByPk(req.userId)
+            const [company] = await user.getCompanies()
+            const projects = await db.projects.findOne({
+                where: {
+                    id: req.params.id,
+                    company_id: company.id
+                }
+            })
+            if (!projects) return res.status(400).json({
+                message: "Can't delete this projects, you're not the owner"
+            });
+        }
+        const deleted = await db.projects.destroy({ where: { id: req.params.id } })
 
-    if (deleted) return res.status(200).json({ message: 'Project deleted' })
-    res.status(400).json({ errorMessage })
+        if (deleted) return res.status(200).json({ message: 'Project deleted' })
+        res.status(400).json({ errorMessage })
+    } catch (error) {
+        res
+            .status(400)
+            .json({ message: "You're trying to delete an assigned company" });
+    }
 }
