@@ -53,6 +53,21 @@ export const update = async (req, res) => {
     res.status(400).json({ errorMessage })
 }
 
+export const updateNotificationStatusByUser = async (req, res) => {
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ errorMessage });
+    await db.users_notifications.update({ status }, {
+        where: { notification_id: req.body.notification_id, user_id: req.body.user_id }
+    });
+    
+    const updated = await db.users_notifications.findOne({
+        where: { notification_id: req.body.notification_id, user_id: req.body.user_id, status: req.body.status }
+    });
+
+    if (updated) return res.status(200).json(updated);
+    res.status(400).json({ errorMessage }); 
+};
+
 export const deleteNotification = async (req, res) => {
     const deleted = await db.notifications.destroy({
         where: { id: req.params.id }

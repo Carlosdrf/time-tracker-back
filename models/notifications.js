@@ -16,7 +16,10 @@ module.exports = (sequelize, DataTypes) => {
   }
   notifications.init({
     message: DataTypes.STRING,
-    active: DataTypes.INTEGER
+    active: {
+      type: DataTypes.INTEGER,
+      defaultValue: 1
+    }
   }, {
     sequelize,
     modelName: 'notifications',

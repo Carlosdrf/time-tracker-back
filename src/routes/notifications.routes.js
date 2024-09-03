@@ -11,6 +11,8 @@ router.post('/', [authJwt.verifyToken, authJwt.isAdmin], notificationController.
 
 router.put('/:id', [authJwt.verifyToken, authJwt.isAdmin], notificationController.update)
 
+router.put('/:id/:user_id', notificationController.updateNotificationStatusByUser)
+
 router.delete('/:id', [authJwt.verifyToken, authJwt.isAdmin], notificationController.deleteNotification)
 
 router.get('/:id/user/:user_id', notificationController.get)

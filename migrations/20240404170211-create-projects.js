@@ -1,30 +1,30 @@
-'use strict';
+"use strict";
 
-const { sequelize } = require('../models');
+const { sequelize } = require("../models");
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('projects', {
+    await queryInterface.createTable("projects", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
       },
       name: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
       },
       description: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
       },
       company_id: {
         type: Sequelize.INTEGER,
         references: {
-          model: 'companies',
-          key: 'id'
+          model: "companies",
+          key: "id",
         },
-        allowNull: false
+        allowNull: false,
       },
       active: {
         type: Sequelize.INTEGER,
@@ -33,16 +33,17 @@ module.exports = {
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.fn('NOW')
+        defaultValue: Sequelize.fn("NOW"),
       },
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.fn('NOW')
-      }
+        defaultValue: Sequelize.fn("NOW"),
+      },
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('projects');
-  }
+    await queryInterface.dropTable("users_projects")
+    await queryInterface.dropTable("projects");
+  },
 };

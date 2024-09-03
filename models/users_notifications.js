@@ -19,7 +19,10 @@ module.exports = (sequelize, DataTypes) => {
   users_notifications.init({
     user_id: DataTypes.INTEGER,
     notification_id: DataTypes.INTEGER,
-    status: DataTypes.INTEGER
+    status: {
+      type: DataTypes.INTEGER,
+      defaultValue: 4
+    }
   }, {
     sequelize,
     modelName: 'users_notifications',
