@@ -5,6 +5,8 @@ const router = Router();
 
 router.get("/", authJwt.verifyToken, positions.get);
 
+router.get("/company/", authJwt.verifyToken, positions.getCompanyPositions);
+
 router.post("/", authJwt.verifyToken, positions.create);
 
 router.put("/:id", authJwt.verifyToken, positions.update);
