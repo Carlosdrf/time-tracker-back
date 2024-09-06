@@ -5,6 +5,58 @@ export const get = async (req, res) => {
   res.json(positions);
 };
 
+export const getCompanyPositions = async (req, res) => {
+  const userId = req.userId
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }  
+  try {
+    const companies = await db.companies_users.findAll({
+      where: {
+        user_id: userId
+      },
+      attributes: ['company_id'],
+      include: [{
+        model: db.users, 
+        attributes: [],
+      }]
+    });
+    const companiesIds = companies.map(company => company.company_id);
+
+    const positions = await db.positions.findAll({
+      attributes: ['title'],
+      required: true,
+      include: [{
+        model: db.employees,
+        attributes: [],
+        required: true,
+        include: [{
+          model: db.users,
+          attributes: [],
+          where: {
+            active: 1
+          }
+        }, {
+          model: db.companies,
+          attributes: [],
+          where: {
+            id: companiesIds
+          }
+        }],
+      }],
+      group: ['positions.title'],
+      distinct: true
+    });
+    const positionsArr = positions.map(position => position.title);
+ 
+    if (positions) {
+      return res.json(positionsArr);
+    }
+  } catch (error) {
+    res.status(400).json({ message: `Error: ${error}` });
+  }
+};
+
 export const create = async (req, res) => {
   const { title, description } = req.body;
   try {
